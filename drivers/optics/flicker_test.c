@@ -252,7 +252,7 @@ struct result_data* als_eol_mode()
 }
 EXPORT_SYMBOL(als_eol_mode);
 
-int als_eol_parse_dt()
+int als_eol_parse_dt(void)
 {
 	struct device_node *np;
 	enum of_gpio_flags flags;
