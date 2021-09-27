@@ -9,7 +9,7 @@ FLAG=1
 
 ifneq ($(CONFIG_KPERFMON), y)
 FLAG=0
-$(info kperfmon_DUMMY="CONFIG_KPERFMON is off.")
+#$(info kperfmon_DUMMY="CONFIG_KPERFMON is off.")
 endif
 
 ifneq ($(shell [ -e $(srctree)/include/linux/olog.pb.h ] && echo exist), exist)
@@ -32,9 +32,11 @@ FLAG=0
 endif
 endif
 
+ifeq ($(FLAG), 1)
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/../../system/core/liblog/include/log/perflog.h  $(srctree)/include/linux/)")
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/../../system/logging/liblog/include/log/perflog.h  $(srctree)/include/linux/)")
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/../system/core/liblog/include/log/perflog.h  $(srctree)/include/linux/)")
+endif
 
 ifneq ($(shell [ -e $(srctree)/include/linux/perflog.h ] && echo exist), exist)
 FLAG=0
@@ -44,8 +46,8 @@ endif
 ifeq ($(FLAG), 1)
 $(info kperfmon_DUMMY="$(shell cp -f $(srctree)/drivers/kperfmon/ologk.h $(srctree)/include/linux/)")
 ifeq ($(CONFIG_KPERFMON_BUILD), y)
-	obj-y		+= kperfmon.o
+	obj-y				+= kperfmon.o
 else
-	obj-m		+= kperfmon.o
+	obj-$(CONFIG_KPERFMON)		+= kperfmon.o
 endif
 endif

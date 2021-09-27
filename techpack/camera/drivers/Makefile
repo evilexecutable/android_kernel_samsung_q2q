@@ -61,11 +61,11 @@ DST_FRONT_FILES = $(srctree)/techpack/camera/drivers/cam_sensor_module/cam_senso
 DST_FRONT_TOP_FILES = $(srctree)/techpack/camera/drivers/cam_sensor_module/cam_sensor/cam_sensor_adaptive_mipi_front_top.h
 
 #Copy sensor header for adaptive mipi
-$(info camera_adaptive_mipi="$(shell cp -f $(SRC_WIDE_FILES) $(DST_WIDE_FILES))")
-$(info camera_adaptive_mipi="$(shell cp -f $(SRC_UW_FILES) $(DST_UW_FILES))")
-$(info camera_adaptive_mipi="$(shell cp -f $(SRC_TELE_FILES) $(DST_TELE_FILES))")
-$(info camera_adaptive_mipi="$(shell cp -f $(SRC_FRONT_FILES) $(DST_FRONT_FILES))")
-$(info camera_adaptive_mipi="$(shell cp -f $(SRC_FRONT_TOP_FILES) $(DST_FRONT_TOP_FILES))")
+$(info camera_adaptive_mipi="$(shell cp -f -v $(SRC_WIDE_FILES) $(DST_WIDE_FILES))")
+$(info camera_adaptive_mipi="$(shell cp -f -v $(SRC_UW_FILES) $(DST_UW_FILES))")
+$(info camera_adaptive_mipi="$(shell cp -f -v $(SRC_TELE_FILES) $(DST_TELE_FILES))")
+$(info camera_adaptive_mipi="$(shell cp -f -v $(SRC_FRONT_FILES) $(DST_FRONT_FILES))")
+$(info camera_adaptive_mipi="$(shell cp -f -v $(SRC_FRONT_TOP_FILES) $(DST_FRONT_TOP_FILES))")
 
 cameratree := $(srctree)/techpack/camera/drivers
 
