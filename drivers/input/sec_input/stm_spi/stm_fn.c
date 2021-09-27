@@ -12,7 +12,7 @@
 #include "stm_dev.h"
 #include "stm_reg.h"
 
-int stm_ts_set_custom_library(struct stm_ts_data *ts)
+int stm_stm_ts_set_custom_library(struct stm_ts_data *ts)
 {
 	u8 data[3] = { 0 };
 	int ret;
@@ -61,7 +61,7 @@ int stm_ts_set_custom_library(struct stm_ts_data *ts)
 	return ret;
 }
 
-void stm_ts_get_custom_library(struct stm_ts_data *ts)
+void stm_stm_ts_get_custom_library(struct stm_ts_data *ts)
 {
 	u8 data[6] = { 0 };
 	int ret, i;
@@ -92,7 +92,7 @@ void stm_ts_get_custom_library(struct stm_ts_data *ts)
 	sec_input_set_fod_info(&ts->client->dev, data[0], data[1], data[2], data[3]);
 }
 
-void stm_ts_set_fod_finger_merge(struct stm_ts_data *ts)
+void stm_stm_ts_set_fod_finger_merge(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 address[2] = {STM_TS_CMD_SET_FOD_FINGER_MERGE, 0};
@@ -114,7 +114,7 @@ void stm_ts_set_fod_finger_merge(struct stm_ts_data *ts)
 	mutex_unlock(&ts->sponge_mutex);
 }
 
-int stm_ts_read_from_sponge(struct stm_ts_data *ts, u8 *data, int length)
+int stm_stm_ts_read_from_sponge(struct stm_ts_data *ts, u8 *data, int length)
 {
 	struct spi_message *m1;
 	struct spi_transfer *t1;
@@ -275,7 +275,7 @@ int stm_ts_read_from_sponge(struct stm_ts_data *ts, u8 *data, int length)
 	return ret;
 }
 
-int stm_ts_write_to_sponge(struct stm_ts_data *ts, u8 *data, int length)
+int stm_stm_ts_write_to_sponge(struct stm_ts_data *ts, u8 *data, int length)
 {
 	struct spi_message *m1;
 	struct spi_transfer *t1;
@@ -466,7 +466,7 @@ int stm_ts_write_to_sponge(struct stm_ts_data *ts, u8 *data, int length)
 	return ret;
 }
 
-int stm_ts_read_chip_id(struct stm_ts_data *ts)
+int stm_stm_ts_read_chip_id(struct stm_ts_data *ts)
 {
 	u8 address = STM_TS_READ_DEVICE_ID;
 	u8 data[5] = {0};
@@ -489,7 +489,7 @@ int stm_ts_read_chip_id(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_read_chip_id_hw(struct stm_ts_data *ts)
+int stm_stm_ts_read_chip_id_hw(struct stm_ts_data *ts)
 {
 	u8 address[5] = { 0xFB, 0x20, 0x00, 0x00, 0x00 };
 	u8 data[8] = {0};
@@ -510,7 +510,7 @@ int stm_ts_read_chip_id_hw(struct stm_ts_data *ts)
 	return -STM_TS_ERROR_INVALID_CHIP_ID;
 }
 
-int stm_ts_get_channel_info(struct stm_ts_data *ts)
+int stm_stm_ts_get_channel_info(struct stm_ts_data *ts)
 {
 	int rc = -1;
 	u8 address = 0;
@@ -568,7 +568,7 @@ int stm_ts_get_channel_info(struct stm_ts_data *ts)
 	return rc;
 }
 
-int stm_ts_get_sysinfo_data(struct stm_ts_data *ts, u8 sysinfo_addr, u8 read_cnt, u8 *data)
+int stm_stm_ts_get_sysinfo_data(struct stm_ts_data *ts, u8 sysinfo_addr, u8 read_cnt, u8 *data)
 {
 	int ret;
 	int rc = 0;
@@ -576,7 +576,7 @@ int stm_ts_get_sysinfo_data(struct stm_ts_data *ts, u8 sysinfo_addr, u8 read_cnt
 
 	u8 address[3] = { 0xA4, 0x06, 0x01 }; // request system information
 
-	ret = stm_ts_wait_for_echo_event(ts, &address[0], 3, 0);
+	ret = stm_stm_ts_wait_for_echo_event(ts, &address[0], 3, 0);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: timeout wait for event\n", __func__);
 		rc = -1;
@@ -609,7 +609,7 @@ ERROR:
 	return rc;
 }
 
-int stm_ts_get_version_info(struct stm_ts_data *ts)
+int stm_stm_ts_get_version_info(struct stm_ts_data *ts)
 {
 	int rc;
 	u8 address = STM_TS_READ_FW_VERSION;
@@ -641,13 +641,13 @@ int stm_ts_get_version_info(struct stm_ts_data *ts)
 	return rc;
 }
 
-void stm_ts_command(struct stm_ts_data *ts, u8 cmd, bool checkecho)
+void stm_stm_ts_command(struct stm_ts_data *ts, u8 cmd, bool checkecho)
 {
 	int ret = 0;
 
 
 	if (checkecho)
-		ret = stm_ts_wait_for_echo_event(ts, &cmd, 1, 100);
+		ret = stm_stm_ts_wait_for_echo_event(ts, &cmd, 1, 100);
 	else
 		ret = ts->stm_ts_spi_write(ts, &cmd, 1, 0, 0);
 	if (ret < 0)
@@ -656,7 +656,7 @@ void stm_ts_command(struct stm_ts_data *ts, u8 cmd, bool checkecho)
 
 }
 
-int stm_ts_systemreset(struct stm_ts_data *ts, unsigned int msec)
+int stm_stm_ts_systemreset(struct stm_ts_data *ts, unsigned int msec)
 {
 	u8 address = 0xFA;
 	u8 data[5] = { 0x20, 0x00, 0x00, 0x24, 0x81 };
@@ -670,16 +670,16 @@ int stm_ts_systemreset(struct stm_ts_data *ts, unsigned int msec)
 
 	sec_delay(msec + 10);
 
-	rc = stm_ts_wait_for_ready(ts);
+	rc = stm_stm_ts_wait_for_ready(ts);
 
-	stm_ts_release_all_finger(ts);
+	stm_stm_ts_release_all_finger(ts);
 
 	enable_irq(ts->irq);
 
 	return rc;
 }
 
-int stm_ts_fix_active_mode(struct stm_ts_data *ts, bool enable)
+int stm_stm_ts_fix_active_mode(struct stm_ts_data *ts, bool enable)
 {
 	u8 address[3] = {0xA0, 0x00, 0x00};
 	int ret;
@@ -704,7 +704,7 @@ int stm_ts_fix_active_mode(struct stm_ts_data *ts, bool enable)
 	return ret;
 }
 
-void stm_ts_change_scan_rate(struct stm_ts_data *ts, u8 rate)
+void stm_stm_ts_change_scan_rate(struct stm_ts_data *ts, u8 rate)
 {
 	u8 address = STM_TS_CMD_SET_GET_REPORT_RATE;
 	u8 data = rate;
@@ -715,15 +715,15 @@ void stm_ts_change_scan_rate(struct stm_ts_data *ts, u8 rate)
 	input_dbg(true, &ts->client->dev, "%s: scan rate (%d Hz), ret = %d\n", __func__, address, ret);
 }
 
-int stm_ts_fw_corruption_check(struct stm_ts_data *ts)
+int stm_stm_ts_fw_corruption_check(struct stm_ts_data *ts)
 {
 	u8 address[6] = { 0, };
 	u8 val = 0;
 	int ret;
 
-	ret = ts->stm_ts_systemreset(ts, 0);
+	ret = ts->stm_stm_ts_systemreset(ts, 0);
 	if (ret < 0) {
-		input_info(true, &ts->client->dev, "%s: stm_ts_systemreset fail (%d)\n", __func__, ret);
+		input_info(true, &ts->client->dev, "%s: stm_stm_ts_systemreset fail (%d)\n", __func__, ret);
 		goto out;
 	}
 	
@@ -750,7 +750,7 @@ out:
 	return ret;
 }
 
-int stm_ts_wait_for_ready(struct stm_ts_data *ts)
+int stm_stm_ts_wait_for_ready(struct stm_ts_data *ts)
 {
 	struct stm_ts_event_status *p_event_status;
 	int rc;
@@ -835,7 +835,7 @@ int stm_ts_wait_for_ready(struct stm_ts_data *ts)
 
 }
 
-int stm_ts_wait_for_echo_event(struct stm_ts_data *ts, u8 *cmd, u8 cmd_cnt, int delay)
+int stm_stm_ts_wait_for_echo_event(struct stm_ts_data *ts, u8 *cmd, u8 cmd_cnt, int delay)
 {
 	int rc;
 	int i;
@@ -916,12 +916,12 @@ int stm_ts_wait_for_echo_event(struct stm_ts_data *ts, u8 *cmd, u8 cmd_cnt, int 
 	return rc;
 }
 
-int stm_ts_set_scanmode(struct stm_ts_data *ts, u8 scan_mode)
+int stm_stm_ts_set_scanmode(struct stm_ts_data *ts, u8 scan_mode)
 {
 	u8 address[3] = { 0xA0, 0x00, scan_mode };
 	int rc;
 
-	rc = stm_ts_wait_for_echo_event(ts, &address[0], 3, 20);
+	rc = stm_stm_ts_wait_for_echo_event(ts, &address[0], 3, 20);
 	if (rc < 0) {
 		input_info(true, &ts->client->dev, "%s: timeout, ret = %d\n", __func__, rc);
 		return rc;
@@ -936,7 +936,7 @@ int stm_ts_set_scanmode(struct stm_ts_data *ts, u8 scan_mode)
 /* optional reg : SEC_TS_CMD_LPM_AOD_OFF_ON(0x9B)	*/
 /* 0 : Async base scan (default on lp mode)		*/
 /* 1 : sync base scan				*/
-int stm_ts_set_hsync_scanmode(struct stm_ts_data *ts, u8 scan_mode)
+int stm_stm_ts_set_hsync_scanmode(struct stm_ts_data *ts, u8 scan_mode)
 {
 	u8 address[2] = { STM_TS_CMD_SET_LPM_AOD_OFF_ON, 0};
 	int rc;
@@ -951,7 +951,7 @@ int stm_ts_set_hsync_scanmode(struct stm_ts_data *ts, u8 scan_mode)
 	return rc;
 }
 
-int stm_ts_set_touch_function(struct stm_ts_data *ts)
+int stm_stm_ts_set_touch_function(struct stm_ts_data *ts)
 {
 	int ret = 0;
 	u8 address = 0;
@@ -971,7 +971,7 @@ int stm_ts_set_touch_function(struct stm_ts_data *ts)
 	return ret;
 }
 
-void stm_ts_get_touch_function(struct work_struct *work)
+void stm_stm_ts_get_touch_function(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data,
 			work_read_functions.work);
@@ -1000,7 +1000,7 @@ void stm_ts_get_touch_function(struct work_struct *work)
 }
 
 
-int stm_ts_osc_trim_recovery(struct stm_ts_data *ts)
+int stm_stm_ts_osc_trim_recovery(struct stm_ts_data *ts)
 {
 	u8 address[3];
 	int rc;
@@ -1012,7 +1012,7 @@ int stm_ts_osc_trim_recovery(struct stm_ts_data *ts)
 	address[1] = 0x00;
 	address[2] = 0x05;
 
-	rc = stm_ts_wait_for_echo_event(ts, &address[0], 3, 800);
+	rc = stm_stm_ts_wait_for_echo_event(ts, &address[0], 3, 800);
 	if (rc < 0) {
 		rc = -STM_TS_ERROR_BROKEN_OSC_TRIM;
 		goto out;
@@ -1023,21 +1023,21 @@ int stm_ts_osc_trim_recovery(struct stm_ts_data *ts)
 	address[1] = 0x05;
 	address[2] = 0x04;
 
-	rc = stm_ts_wait_for_echo_event(ts, &address[0], 3, 100);
+	rc = stm_stm_ts_wait_for_echo_event(ts, &address[0], 3, 100);
 	if (rc < 0) {
 		rc = -STM_TS_ERROR_BROKEN_OSC_TRIM;
 		goto out;
 	}
 
 	sec_delay(500);
-	rc = ts->stm_ts_systemreset(ts, 0);
+	rc = ts->stm_stm_ts_systemreset(ts, 0);
 	sec_delay(50);
 
 out:
 	return rc;
 }
 
-int stm_ts_set_opmode(struct stm_ts_data *ts, u8 mode)
+int stm_stm_ts_set_opmode(struct stm_ts_data *ts, u8 mode)
 {
 	int ret;
 	u8 address[2] = {STM_TS_CMD_SET_GET_OPMODE, mode};
@@ -1060,7 +1060,7 @@ int stm_ts_set_opmode(struct stm_ts_data *ts, u8 mode)
 }
 
 
-void  stm_ts_set_utc_sponge(struct stm_ts_data *ts)
+void  stm_stm_ts_set_utc_sponge(struct stm_ts_data *ts)
 {
 	struct timespec64 current_time;
 	u8 data[6] = {STM_TS_CMD_SPONGE_OFFSET_UTC, 0};
@@ -1080,7 +1080,7 @@ void  stm_ts_set_utc_sponge(struct stm_ts_data *ts)
 }
 
 
-int stm_ts_set_lowpowermode(void *data, u8 mode)
+int stm_stm_ts_set_lowpowermode(void *data, u8 mode)
 {
 	struct stm_ts_data *ts = (struct stm_ts_data *)data;
 	int ret;
@@ -1092,7 +1092,7 @@ int stm_ts_set_lowpowermode(void *data, u8 mode)
 			mode == TO_LOWPOWER_MODE ? "ENTER" : "EXIT", ts->plat_data->lowpower_mode);
 
 	if (mode) {
-		stm_ts_set_utc_sponge(ts);
+		stm_stm_ts_set_utc_sponge(ts);
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_DUMP_MODE)
 		if (ts->sponge_inf_dump) {
@@ -1103,7 +1103,7 @@ int stm_ts_set_lowpowermode(void *data, u8 mode)
 			}
 		}
 #endif
-		ret = stm_ts_set_custom_library(ts);
+		ret = stm_stm_ts_set_custom_library(ts);
 		if (ret < 0)
 			goto i2c_error;
 	} else {
@@ -1113,12 +1113,12 @@ int stm_ts_set_lowpowermode(void *data, u8 mode)
 
 retry_pmode:
 	if (mode)
-		ret = stm_ts_set_opmode(ts, STM_TS_OPMODE_LOWPOWER);
+		ret = stm_stm_ts_set_opmode(ts, STM_TS_OPMODE_LOWPOWER);
 	else
-		ret = stm_ts_set_opmode(ts, STM_TS_OPMODE_NORMAL);
+		ret = stm_stm_ts_set_opmode(ts, STM_TS_OPMODE_NORMAL);
 
 	if (ret < 0) {
-		input_err(true, &ts->client->dev, "%s: stm_ts_set_opmode failed!\n", __func__);
+		input_err(true, &ts->client->dev, "%s: stm_stm_ts_set_opmode failed!\n", __func__);
 		goto i2c_error;
 	}
 
@@ -1144,9 +1144,9 @@ retry_pmode:
 	}
 
 	if (mode)
-		stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, false);
+		stm_stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, false);
 
-	stm_ts_locked_release_all_finger(ts);
+	stm_stm_ts_locked_release_all_finger(ts);
 
 	if (device_may_wakeup(&ts->client->dev)) {
 		if (mode)
@@ -1166,21 +1166,21 @@ i2c_error:
 	return ret;
 }
 
-void stm_ts_release_all_finger(struct stm_ts_data *ts)
+void stm_stm_ts_release_all_finger(struct stm_ts_data *ts)
 {
 	sec_input_release_all_finger(&ts->client->dev);
 }
 
-void stm_ts_locked_release_all_finger(struct stm_ts_data *ts)
+void stm_stm_ts_locked_release_all_finger(struct stm_ts_data *ts)
 {
 	mutex_lock(&ts->eventlock);
 
-	stm_ts_release_all_finger(ts);
+	stm_stm_ts_release_all_finger(ts);
 
 	mutex_unlock(&ts->eventlock);
 }
 
-void stm_ts_reset(struct stm_ts_data *ts, unsigned int ms)
+void stm_stm_ts_reset(struct stm_ts_data *ts, unsigned int ms)
 {
 	input_info(true, &ts->client->dev, "%s: Recover IC, discharge time:%d\n", __func__, ms);
 
@@ -1195,7 +1195,7 @@ void stm_ts_reset(struct stm_ts_data *ts, unsigned int ms)
 	sec_delay(TOUCH_POWER_ON_DWORK_TIME);
 }
 
-void stm_ts_reset_work(struct work_struct *work)
+void stm_stm_ts_reset_work(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data,
 			reset_work.work);
@@ -1264,7 +1264,7 @@ void stm_ts_reset_work(struct work_struct *work)
 				return;
 			}
 			if (ts->plat_data->lowpower_mode & SEC_TS_MODE_SPONGE_AOD)
-				stm_ts_set_aod_rect(ts);
+				stm_stm_ts_set_aod_rect(ts);
 		} else {
 			ts->plat_data->stop_device(ts);
 		}
@@ -1275,7 +1275,7 @@ void stm_ts_reset_work(struct work_struct *work)
 
 	if (ts->plat_data->power_state == SEC_INPUT_STATE_POWER_ON)
 		if (ts->fix_active_mode)
-			stm_ts_fix_active_mode(ts, 1);
+			stm_stm_ts_fix_active_mode(ts, 1);
 
 	snprintf(result, sizeof(result), "RESULT=RESET");
 	if (ts->probe_done)
@@ -1284,7 +1284,7 @@ void stm_ts_reset_work(struct work_struct *work)
 	__pm_relax(ts->plat_data->sec_ws);
 }
 
-void stm_ts_print_info_work(struct work_struct *work)
+void stm_stm_ts_print_info_work(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data,
 			work_print_info.work);
@@ -1372,7 +1372,7 @@ void stm_ts_read_rawdata_address(struct stm_ts_data *ts)
 	enable_irq(ts->irq);
 }
 
-void stm_ts_read_info_work(struct work_struct *work)
+void stm_stm_ts_read_info_work(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data,
 			work_read_info.work);
@@ -1380,8 +1380,8 @@ void stm_ts_read_info_work(struct work_struct *work)
 
 #if defined(DUAL_FOLDABLE_GKI)
 	ts->info_work_done = true;
-	stm_ts_input_close(ts->plat_data->input_dev);
-	stm_ts_input_open(ts->plat_data->input_dev);
+	stm_stm_ts_input_close(ts->plat_data->input_dev);
+	stm_stm_ts_input_open(ts->plat_data->input_dev);
 	return;
 #endif
 #ifdef TCLM_CONCEPT
@@ -1395,13 +1395,13 @@ void stm_ts_read_info_work(struct work_struct *work)
 	input_raw_info_d(ts->plat_data->support_dual_foldable, &ts->client->dev,
 					"%s: fac test result %02X\n", __func__, ts->test_result.data[0]);
 
-	stm_ts_run_rawdata_all(ts);
+	stm_stm_ts_run_rawdata_all(ts);
 
 	/* read cmoffset & fail history data at booting time */
 	input_info(true, &ts->client->dev, "%s: read cm data in tsp ic\n", __func__);
-	get_cmoffset_dump(ts, ts->cmoffset_sdc_proc, OFFSET_FW_SDC);
-	get_cmoffset_dump(ts, ts->cmoffset_sub_proc, OFFSET_FW_SUB);
-	get_cmoffset_dump(ts, ts->cmoffset_main_proc, OFFSET_FW_MAIN);
+	stm_get_cmoffset_dump(ts, ts->cmoffset_sdc_proc, OFFSET_FW_SDC);
+	stm_get_cmoffset_dump(ts, ts->cmoffset_sub_proc, OFFSET_FW_SUB);
+	stm_get_cmoffset_dump(ts, ts->cmoffset_main_proc, OFFSET_FW_MAIN);
 
 	ts->info_work_done = true;
 
@@ -1447,7 +1447,7 @@ void stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable)
 		ts->plat_data->touch_functions = (ts->plat_data->touch_functions & (~STM_TS_TOUCHTYPE_BIT_COVER));
 	}
 
-	ret = stm_ts_set_touch_function(ts);
+	ret = stm_stm_ts_set_touch_function(ts);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Failed to send touch type command: 0x%02X%02X",
 				__func__, data[0], data[1]);
@@ -1456,7 +1456,7 @@ void stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable)
 }
 EXPORT_SYMBOL(stm_ts_spi_set_cover_type);
 
-int stm_ts_set_temperature(struct device *dev, u8 temperature_data)
+int stm_stm_ts_set_temperature(struct device *dev, u8 temperature_data)
 {
 	struct stm_ts_data *ts = dev_get_drvdata(dev);
 	u8 address;
@@ -1466,7 +1466,7 @@ int stm_ts_set_temperature(struct device *dev, u8 temperature_data)
 	return ts->stm_ts_spi_write(ts, &address, 1,  &temperature_data, 1);
 }
 
-int stm_ts_set_aod_rect(struct stm_ts_data *ts)
+int stm_stm_ts_set_aod_rect(struct stm_ts_data *ts)
 {
 	u8 data[10] = {0x02, 0};
 	int ret, i;
@@ -1483,7 +1483,7 @@ int stm_ts_set_aod_rect(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_set_press_property(struct stm_ts_data *ts)
+int stm_stm_ts_set_press_property(struct stm_ts_data *ts)
 {
 	u8 data[3] = { SEC_TS_CMD_SPONGE_PRESS_PROPERTY, 0 };
 	int ret;
@@ -1502,7 +1502,7 @@ int stm_ts_set_press_property(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_set_fod_rect(struct stm_ts_data *ts)
+int stm_stm_ts_set_fod_rect(struct stm_ts_data *ts)
 {
 	u8 data[10] = {0x4b, 0};
 	int ret, i;
@@ -1523,7 +1523,7 @@ int stm_ts_set_fod_rect(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_set_charger_mode(struct stm_ts_data *ts)
+int stm_stm_ts_set_charger_mode(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 address;
@@ -1575,7 +1575,7 @@ int stm_ts_set_charger_mode(struct stm_ts_data *ts)
  *		landscape -> normal (etc) : 0xAC....  + 0xAD, 0
  */
 
-void stm_set_grip_data_to_ic(struct device *dev, u8 flag)
+void stm_stm_set_grip_data_to_ic(struct device *dev, u8 flag)
 {
 	struct stm_ts_data *ts = dev_get_drvdata(dev);
 
@@ -1692,7 +1692,7 @@ void stm_set_grip_data_to_ic(struct device *dev, u8 flag)
  * then set cmd for that mode like below. (it is in this function)
  * noise_mode_cmd[EXT_NOISE_MODE_MONITOR] = stm_TS_CMD_SET_MONITOR_NOISE_MODE;
  */
-int stm_ts_set_external_noise_mode(struct stm_ts_data *ts, u8 mode)
+int stm_stm_ts_set_external_noise_mode(struct stm_ts_data *ts, u8 mode)
 {
 	int i, ret, fail_count = 0;
 	u8 mode_bit_to_set, check_bit, mode_enable;
@@ -1741,7 +1741,7 @@ int stm_ts_set_external_noise_mode(struct stm_ts_data *ts, u8 mode)
 		return 0;
 }
 
-int stm_ts_set_touchable_area(struct stm_ts_data *ts)
+int stm_stm_ts_set_touchable_area(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 address[2] = {STM_TS_CMD_SET_FUNCTION_ONOFF, STM_TS_FUNCTION_SET_TOUCHABLE_AREA};
@@ -1756,7 +1756,7 @@ int stm_ts_set_touchable_area(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_ear_detect_enable(struct stm_ts_data *ts, u8 enable)
+int stm_stm_ts_ear_detect_enable(struct stm_ts_data *ts, u8 enable)
 {
 	int ret;
 	u8 address = STM_TS_CMD_SET_EAR_DETECT;
@@ -1772,7 +1772,7 @@ int stm_ts_ear_detect_enable(struct stm_ts_data *ts, u8 enable)
 	return ret;
 }
 
-int stm_ts_pocket_mode_enable(struct stm_ts_data *ts, u8 enable)
+int stm_stm_ts_pocket_mode_enable(struct stm_ts_data *ts, u8 enable)
 {
 	int ret;
 	u8 address = STM_TS_CMD_SET_POCKET_MODE;
@@ -1843,7 +1843,7 @@ int stm_ts_note_mode_enable(struct stm_ts_data *ts)
 }
 
 #define NVM_CMD(mtype, moffset, mlength)		.type = mtype,	.offset = moffset,	.length = mlength
-struct stm_ts_nvm_data_map nvm_data[] = {
+struct stm_ts_nvm_data_map stm_nvm_data[] = {
 	{NVM_CMD(0,						0x00, 0),},
 	{NVM_CMD(STM_TS_NVM_OFFSET_FAC_RESULT,			0x00, 1),},	/* SEC */
 	{NVM_CMD(STM_TS_NVM_OFFSET_CAL_COUNT,			0x01, 1),},	/* SEC */
@@ -1857,39 +1857,39 @@ struct stm_ts_nvm_data_map nvm_data[] = {
 	{NVM_CMD(STM_TS_NVM_OFFSET_CAL_FAIL_COUNT,		0x1D, 1),},	/* SEC */
 };
 
-int get_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata)
+int get_stm_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata)
 {
-	int size = sizeof(nvm_data) / sizeof(struct stm_ts_nvm_data_map);
+	int size = sizeof(stm_nvm_data) / sizeof(struct stm_ts_nvm_data_map);
 
 	if (type >= size)
 		return -EINVAL;
 
-	return get_nvm_data_by_size(ts, nvm_data[type].offset, nvm_data[type].length, nvdata);
+	return stm_get_nvm_data_by_size(ts, stm_nvm_data[type].offset, stm_nvm_data[type].length, nvdata);
 }
 
-int set_nvm_data(struct stm_ts_data *ts, u8 type, u8 *buf)
+int stm_set_stm_nvm_data(struct stm_ts_data *ts, u8 type, u8 *buf)
 {
-	return set_nvm_data_by_size(ts, nvm_data[type].offset, nvm_data[type].length, buf);
+	return stm_set_nvm_data_by_size(ts, stm_nvm_data[type].offset, stm_nvm_data[type].length, buf);
 }
 
 
-int get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvdata)
+int stm_get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvdata)
 {
 	u8 address[3] = {0};
 	u8 data[128] = { 0 };
 	int ret;
 
 	sec_delay(200);
-	ts->stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true); // Clear FIFO
+	ts->stm_stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true); // Clear FIFO
 
-	stm_ts_release_all_finger(ts);
+	stm_stm_ts_release_all_finger(ts);
 
 	// Request SEC factory debug data from flash
 	address[0] = 0xA4;
 	address[1] = 0x06;
 	address[2] = 0x90;
 
-	ret = stm_ts_wait_for_echo_event(ts, &address[0], 3, 50);
+	ret = stm_stm_ts_wait_for_echo_event(ts, &address[0], 3, 50);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev,
 				"%s: timeout. ret: %d\n", __func__, ret);
@@ -1916,16 +1916,16 @@ int get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvda
 	return ret;
 }
 
-int set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf)
+int stm_set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf)
 {
 	u8 buff[256] = { 0 };
 	u8 remaining, index, sendinglength;
 	int ret;
 
 	sec_delay(200);
-	ts->stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true); // Clear FIFO
+	ts->stm_stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true); // Clear FIFO
 
-	stm_ts_release_all_finger(ts);
+	stm_stm_ts_release_all_finger(ts);
 
 	remaining = length;
 	index = 0;
@@ -1960,7 +1960,7 @@ int set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf)
 	buff[1] = 0x05;
 	buff[2] = 0x04; // panel configuration area
 
-	ret = stm_ts_wait_for_echo_event(ts, &buff[0], 3, 200);
+	ret = stm_stm_ts_wait_for_echo_event(ts, &buff[0], 3, 200);
 	if (ret < 0)
 		input_err(true, &ts->client->dev,
 				"%s: failed to get echo. ret: %d\n", __func__, ret);
@@ -1978,34 +1978,34 @@ int stm_tclm_data_read(struct spi_device *client, int address)
 
 	switch (address) {
 	case SEC_TCLM_NVM_OFFSET_IC_FIRMWARE_VER:
-		ret = stm_ts_get_version_info(ts);
+		ret = stm_stm_ts_get_version_info(ts);
 		ic_version = (ts->module_version_of_ic << 8) | (ts->fw_main_version_of_ic & 0xFF);
 		return ic_version;
 	case SEC_TCLM_NVM_ALL_DATA:
-		ret = get_nvm_data_by_size(ts, nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset,
+		ret = stm_get_nvm_data_by_size(ts, stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset,
 				STM_TS_NVM_OFFSET_ALL, nbuff);
 		if (ret < 0)
 			return ret;
-		ts->tdata->nvdata.cal_count = nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_COUNT].offset];
-		ts->tdata->nvdata.tune_fix_ver = (nbuff[nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset] << 8) |
-							nbuff[nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset + 1];
-		ts->tdata->nvdata.cal_position = nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_POSITION].offset];
-		ts->tdata->nvdata.cal_pos_hist_cnt = nbuff[nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_COUNT].offset];
-		ts->tdata->nvdata.cal_pos_hist_lastp = nbuff[nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_LASTP].offset];
-		for (i = nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset;
-				i < nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset +
-				nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].length; i++)
-			ts->tdata->nvdata.cal_pos_hist_queue[i - nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset] = nbuff[i];
+		ts->tdata->nvdata.cal_count = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_COUNT].offset];
+		ts->tdata->nvdata.tune_fix_ver = (nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset] << 8) |
+							nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset + 1];
+		ts->tdata->nvdata.cal_position = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_POSITION].offset];
+		ts->tdata->nvdata.cal_pos_hist_cnt = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_COUNT].offset];
+		ts->tdata->nvdata.cal_pos_hist_lastp = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_LASTP].offset];
+		for (i = stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset;
+				i < stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset +
+				stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].length; i++)
+			ts->tdata->nvdata.cal_pos_hist_queue[i - stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset] = nbuff[i];
 
-		ts->tdata->nvdata.cal_fail_falg = nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_FLAG].offset];
-		ts->tdata->nvdata.cal_fail_cnt= nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_COUNT].offset];
-		ts->fac_nv = nbuff[nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset];
-		ts->disassemble_count = nbuff[nvm_data[STM_TS_NVM_OFFSET_DISASSEMBLE_COUNT].offset];
+		ts->tdata->nvdata.cal_fail_falg = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_FLAG].offset];
+		ts->tdata->nvdata.cal_fail_cnt= nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_COUNT].offset];
+		ts->fac_nv = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset];
+		ts->disassemble_count = nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_DISASSEMBLE_COUNT].offset];
 		return ret;
 	case SEC_TCLM_NVM_TEST:
 		input_info(true, &ts->client->dev, "%s: dt: tclm_level [%d] afe_base [%04X]\n",
 			__func__, ts->tdata->tclm_level, ts->tdata->afe_base);
-		ret = get_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
+		ret = stm_get_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
 			SEC_TCLM_NVM_OFFSET_LENGTH, ts->tdata->tclm);
 		if (ts->tdata->tclm[0] != 0xFF) {
 			ts->tdata->tclm_level = ts->tdata->tclm[0];
@@ -2030,24 +2030,24 @@ int stm_tclm_data_write(struct spi_device *client, int address)
 	switch (address) {
 	case SEC_TCLM_NVM_ALL_DATA:
 		memset(nbuff, 0x00, STM_TS_NVM_OFFSET_ALL);
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset] = ts->fac_nv;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_DISASSEMBLE_COUNT].offset] = ts->disassemble_count;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_COUNT].offset] = ts->tdata->nvdata.cal_count;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset] = (u8)(ts->tdata->nvdata.tune_fix_ver >> 8);
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset + 1] = (u8)(0xff & ts->tdata->nvdata.tune_fix_ver);
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_POSITION].offset] = ts->tdata->nvdata.cal_position;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_COUNT].offset] = ts->tdata->nvdata.cal_pos_hist_cnt;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_LASTP].offset] = ts->tdata->nvdata.cal_pos_hist_lastp;
-		for (i = nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset;
-				i < nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset +
-				nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].length; i++)
-			nbuff[i] = ts->tdata->nvdata.cal_pos_hist_queue[i - nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset];
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_FLAG].offset] = ts->tdata->nvdata.cal_fail_falg;
-		nbuff[nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_COUNT].offset] = ts->tdata->nvdata.cal_fail_cnt;
-		ret = set_nvm_data_by_size(ts, nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset, STM_TS_NVM_OFFSET_ALL, nbuff);
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset] = ts->fac_nv;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_DISASSEMBLE_COUNT].offset] = ts->disassemble_count;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_COUNT].offset] = ts->tdata->nvdata.cal_count;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset] = (u8)(ts->tdata->nvdata.tune_fix_ver >> 8);
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_TUNE_VERSION].offset + 1] = (u8)(0xff & ts->tdata->nvdata.tune_fix_ver);
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_POSITION].offset] = ts->tdata->nvdata.cal_position;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_COUNT].offset] = ts->tdata->nvdata.cal_pos_hist_cnt;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_LASTP].offset] = ts->tdata->nvdata.cal_pos_hist_lastp;
+		for (i = stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset;
+				i < stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset +
+				stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].length; i++)
+			nbuff[i] = ts->tdata->nvdata.cal_pos_hist_queue[i - stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset];
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_FLAG].offset] = ts->tdata->nvdata.cal_fail_falg;
+		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_COUNT].offset] = ts->tdata->nvdata.cal_fail_cnt;
+		ret = stm_set_nvm_data_by_size(ts, stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset, STM_TS_NVM_OFFSET_ALL, nbuff);
 		return ret;
 	case SEC_TCLM_NVM_TEST:
-		ret = set_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
+		ret = stm_set_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
 			SEC_TCLM_NVM_OFFSET_LENGTH, ts->tdata->tclm);
 		return ret;
 	default:
@@ -2057,7 +2057,7 @@ int stm_tclm_data_write(struct spi_device *client, int address)
 }
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_DUAL_FOLDABLE)
-void stm_chk_tsp_ic_status(struct stm_ts_data *ts, int call_pos)
+void stm_stm_chk_tsp_ic_status(struct stm_ts_data *ts, int call_pos)
 {
 	u8 data[3] = { 0 };
 
@@ -2170,7 +2170,7 @@ void stm_chk_tsp_ic_status(struct stm_ts_data *ts, int call_pos)
 	mutex_unlock(&ts->status_mutex);
 }
 
-void stm_switching_work(struct work_struct *work)
+void stm_stm_switching_work(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data,
 				switching_work.work);
@@ -2196,17 +2196,17 @@ void stm_switching_work(struct work_struct *work)
 		} else {
 			/* close : main_tsp off */
 #if IS_ENABLED(CONFIG_INPUT_SEC_SECURE_TOUCH)
-			secure_touch_stop(ts, 1);
+			stm_secure_touch_stop(ts, 1);
 #endif
 		}
 
-		stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_HALL);
+		stm_stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_HALL);
 		mutex_unlock(&ts->switching_mutex);
 	} else if (ts->plat_data->support_flex_mode && (ts->plat_data->support_dual_foldable == MAIN_TOUCH)) {
 		input_info(true, &ts->client->dev, "%s support_flex_mode\n", __func__);
 
 		mutex_lock(&ts->switching_mutex);
-		stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_SYSFS);
+		stm_stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_SYSFS);
 #if IS_ENABLED(CONFIG_INPUT_SEC_NOTIFIER)
 		sec_input_notify(&ts->stm_input_nb, NOTIFIER_MAIN_TOUCH_ON, NULL);
 #endif
@@ -2215,7 +2215,7 @@ void stm_switching_work(struct work_struct *work)
 }
 
 #if IS_ENABLED(CONFIG_HALL_NOTIFIER)
-int stm_hall_ic_notify(struct notifier_block *nb,
+int stm_stm_hall_ic_notify(struct notifier_block *nb,
 			unsigned long flip_cover, void *v)
 {
 	struct stm_ts_data *ts = container_of(nb, struct stm_ts_data,
@@ -2248,7 +2248,7 @@ int stm_hall_ic_notify(struct notifier_block *nb,
 }
 #endif
 #if IS_ENABLED(CONFIG_SUPPORT_SENSOR_FOLD)
-int stm_hall_ic_ssh_notify(struct notifier_block *nb,
+int stm_stm_hall_ic_ssh_notify(struct notifier_block *nb,
 			unsigned long flip_cover, void *v)
 {
 	struct stm_ts_data *ts = container_of(nb, struct stm_ts_data,
@@ -2274,7 +2274,7 @@ int stm_hall_ic_ssh_notify(struct notifier_block *nb,
 #endif
 
 #if IS_ENABLED(CONFIG_INPUT_SEC_NOTIFIER)
-int stm_notifier_call(struct notifier_block *n,
+int stm_stm_notifier_call(struct notifier_block *n,
 			unsigned long data, void *v)
 {
 	struct stm_ts_data *ts = container_of(n, struct stm_ts_data, stm_input_nb);
@@ -2294,7 +2294,7 @@ int stm_notifier_call(struct notifier_block *n,
 			input_info(true, &ts->client->dev, "%s: main_tsp open\n", __func__);
 			mutex_lock(&ts->modechange);
 			ts->tsp_open_status = NOTIFIER_MAIN_TOUCH_ON;
-			stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_CLOSE);
+			stm_stm_chk_tsp_ic_status(ts, STM_TS_STATE_CHK_POS_CLOSE);
 			mutex_unlock(&ts->modechange);
 		}
 		break;
