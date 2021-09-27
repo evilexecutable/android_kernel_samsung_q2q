@@ -47,7 +47,7 @@ struct stm_ts_header {
 
 #define	SIGNEDKEY_SIZE		(256)
 
-int stm_ts_check_dma_startanddone(struct stm_ts_data *ts)
+int stm_stm_ts_check_dma_startanddone(struct stm_ts_data *ts)
 {
 	int timeout = 60;
 	u8 reg[6] = { 0xFA, 0x20, 0x00, 0x00, 0x71, 0xC0 };
@@ -114,7 +114,7 @@ static int stm_ts_check_erase_done(struct stm_ts_data *ts)
 	return 0;
 }
 
-int stm_ts_fw_fillflash(struct stm_ts_data *ts, u32 address, u8 *data, int size)
+int stm_stm_ts_fw_fillflash(struct stm_ts_data *ts, u32 address, u8 *data, int size)
 {
 	int remaining, index = 0;
 	int towrite = 0;
@@ -209,7 +209,7 @@ int stm_ts_fw_fillflash(struct stm_ts_data *ts, u32 address, u8 *data, int size)
 		}
 		sec_delay(10);
 
-		rc = stm_ts_check_dma_startanddone(ts);
+		rc = stm_stm_ts_check_dma_startanddone(ts);
 		if (rc < 0)
 			return rc;
 
@@ -417,7 +417,7 @@ static int stm_ts_fw_burn(struct stm_ts_data *ts, const u8 *fw_data)
 		pfwdata = (u8 *) &fw_data[FW_HEADER_SIZE];
 
 		input_info(true, &ts->client->dev, "%s: Start Flashing for Code\n", __func__);
-		rc = stm_ts_fw_fillflash(ts, CODE_ADDR_START, &pfwdata[0], fw_header->sec0_size);
+		rc = stm_stm_ts_fw_fillflash(ts, CODE_ADDR_START, &pfwdata[0], fw_header->sec0_size);
 		if (rc < 0)
 			return rc;
 
@@ -429,7 +429,7 @@ static int stm_ts_fw_burn(struct stm_ts_data *ts, const u8 *fw_data)
 	if (fw_header->sec1_size > 0) {
 		input_info(true, &ts->client->dev, "%s: Start Flashing for Config\n", __func__);
 		pfwdata = (u8 *) &fw_data[FW_HEADER_SIZE + fw_header->sec0_size];
-		rc = stm_ts_fw_fillflash(ts, CONFIG_ADDR_START, &pfwdata[0], fw_header->sec1_size);
+		rc = stm_stm_ts_fw_fillflash(ts, CONFIG_ADDR_START, &pfwdata[0], fw_header->sec1_size);
 		if (rc < 0)
 			return rc;
 		input_info(true, &ts->client->dev, "%s: Finished total flashing %u Bytes for Config\n",
@@ -440,7 +440,7 @@ static int stm_ts_fw_burn(struct stm_ts_data *ts, const u8 *fw_data)
 	if (fw_header->sec2_size > 0) {
 		input_info(true, &ts->client->dev, "%s: Start Flashing for CX\n", __func__);
 		pfwdata = (u8 *) &fw_data[FW_HEADER_SIZE + fw_header->sec0_size + fw_header->sec1_size];
-		rc = stm_ts_fw_fillflash(ts, CX_ADDR_START, &pfwdata[0], fw_header->sec2_size);
+		rc = stm_stm_ts_fw_fillflash(ts, CX_ADDR_START, &pfwdata[0], fw_header->sec2_size);
 		if (rc < 0)
 			return rc;
 		input_info(true, &ts->client->dev, "%s: Finished total flashing %u Bytes for CX\n",
@@ -459,7 +459,7 @@ static int stm_ts_fw_burn(struct stm_ts_data *ts, const u8 *fw_data)
 	sec_delay(200);
 
 	// System Reset
-	ts->stm_ts_systemreset(ts, 0);
+	ts->stm_stm_ts_systemreset(ts, 0);
 
 	return 0;
 }
@@ -500,7 +500,7 @@ static void stm_ts_set_factory_history_data(struct stm_ts_data *ts, u8 level)
 	regaddr[1] = 0x05;
 	regaddr[2] = 0x04; /* panel configuration area */
 
-	ret = stm_ts_wait_for_echo_event(ts, regaddr, 3, 200);
+	ret = stm_stm_ts_wait_for_echo_event(ts, regaddr, 3, 200);
 	if (ret < 0)
 		return;
 
@@ -509,15 +509,15 @@ static void stm_ts_set_factory_history_data(struct stm_ts_data *ts, u8 level)
 }
 
 #ifdef TCLM_CONCEPT
-int stm_ts_tclm_execute_force_calibration(struct spi_device *client, int cal_mode)
+int stm_stm_ts_tclm_execute_force_calibration(struct spi_device *client, int cal_mode)
 {
 	struct stm_ts_data *ts = (struct stm_ts_data *)spi_get_drvdata(client);
 
-	return stm_ts_execute_autotune(ts, true);
+	return stm_stm_ts_execute_autotune(ts, true);
 }
 #endif
 
-int stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
+int stm_stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
 {
 	u8 reg[STM_TS_EVENT_BUFF_SIZE] = {0,};
 	u8 datatype = 0x00;
@@ -525,8 +525,8 @@ int stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
 
 	input_info(true, &ts->client->dev, "%s: start\n", __func__);
 
-	stm_ts_set_scanmode(ts, STM_TS_SCAN_MODE_SCAN_OFF);
-	ts->stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true);
+	stm_stm_ts_set_scanmode(ts, STM_TS_SCAN_MODE_SCAN_OFF);
+	ts->stm_stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true);
 
 	// w A4 00 03
 	if (issaving == true) {
@@ -535,7 +535,7 @@ int stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
 		reg[1] = 0x00;
 		reg[2] = 0x03;
 
-		rc = stm_ts_wait_for_echo_event(ts, &reg[0], 3, 500);
+		rc = stm_stm_ts_wait_for_echo_event(ts, &reg[0], 3, 500);
 #ifdef TCLM_CONCEPT
 		if (ts->tdata->nvdata.cal_fail_cnt == 0xFF)
 			ts->tdata->nvdata.cal_fail_cnt = 0;
@@ -563,7 +563,7 @@ int stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
 		reg[2] = (u8)datatype;
 		reg[3] = 0x00;
 
-		rc = stm_ts_wait_for_echo_event(ts, &reg[0], 4, 500);
+		rc = stm_stm_ts_wait_for_echo_event(ts, &reg[0], 4, 500);
 		if (rc < 0) {
 			input_err(true, &ts->client->dev, "%s: timeout\n", __func__);
 			goto ERROR;
@@ -572,10 +572,10 @@ int stm_ts_execute_autotune(struct stm_ts_data *ts, bool issaving)
 
 	stm_ts_set_factory_history_data(ts, ts->factory_position);
 	if (issaving == true)
-		stm_ts_panel_ito_test(ts, SAVE_MISCAL_REF_RAW);
+		stm_stm_ts_panel_ito_test(ts, SAVE_MISCAL_REF_RAW);
 
 ERROR:
-	stm_ts_set_scanmode(ts, ts->scan_mode);
+	stm_stm_ts_set_scanmode(ts, ts->scan_mode);
 	ts->factory_position = OFFSET_FAC_NOSAVE;
 
 	return rc;
@@ -608,7 +608,7 @@ static const int stm_ts_fw_updater(struct stm_ts_data *ts, const u8 *fw_data)
 	while (1) {
 		retval = stm_ts_fw_burn(ts, fw_data);
 		if (retval >= 0) {
-			stm_ts_get_version_info(ts);
+			stm_stm_ts_get_version_info(ts);
 
 			if (fw_main_version == ts->fw_main_version_of_ic) {
 				input_info(true, &ts->client->dev,
@@ -616,17 +616,17 @@ static const int stm_ts_fw_updater(struct stm_ts_data *ts, const u8 *fw_data)
 						__func__);
 				ts->fw_corruption = false;
 
-				retval = ts->stm_ts_systemreset(ts, 0);
+				retval = ts->stm_stm_ts_systemreset(ts, 0);
 
 				if (retval == -STM_TS_ERROR_BROKEN_OSC_TRIM) {
-					retval = stm_ts_osc_trim_recovery(ts);
+					retval = stm_stm_ts_osc_trim_recovery(ts);
 					if (retval < 0)
 						input_err(true, &ts->client->dev, "%s: Failed to recover osc trim\n", __func__);
 					else
 						ts->fw_corruption = false;
 				}
 
-				stm_ts_set_scanmode(ts, ts->scan_mode);
+				stm_stm_ts_set_scanmode(ts, ts->scan_mode);
 				retval = 0;
 				break;
 			}
@@ -819,7 +819,7 @@ static int stm_ts_load_fw_from_kernel(struct stm_ts_data *ts)
 	}
 
 
-	ts->stm_ts_systemreset(ts, 20);
+	ts->stm_stm_ts_systemreset(ts, 20);
 
 #ifdef TCLM_CONCEPT
 	sec_tclm_root_of_cal(ts->tdata, CALPOSITION_TESTMODE);
@@ -940,7 +940,7 @@ static int stm_ts_load_fw(struct stm_ts_data *ts, int update_type)
 		}
 	}
 #endif
-	ts->stm_ts_systemreset(ts, 0);
+	ts->stm_stm_ts_systemreset(ts, 0);
 
 #ifdef TCLM_CONCEPT
 	sec_tclm_root_of_cal(ts->tdata, CALPOSITION_TESTMODE);
@@ -993,8 +993,8 @@ int stm_ts_spi_fw_update_on_hidden_menu(struct stm_ts_data *ts, int update_type)
 		break;
 	}
 
-	stm_ts_get_custom_library(ts);
-	stm_ts_set_custom_library(ts);
+	stm_stm_ts_get_custom_library(ts);
+	stm_stm_ts_set_custom_library(ts);
 
 	return retval;
 }

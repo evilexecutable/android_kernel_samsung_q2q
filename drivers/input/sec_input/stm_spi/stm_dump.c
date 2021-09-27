@@ -31,15 +31,15 @@ static ssize_t stm_ts_tsp_cmoffset_all_read(struct file *file, char __user *buf,
 
 	if (pos == 0) {
 #if IS_ENABLED(CONFIG_SEC_FACTORY)
-		ret = get_cmoffset_dump(ts, ts->cmoffset_sdc_proc, OFFSET_FW_SDC);
+		ret = stm_get_cmoffset_dump(ts, ts->cmoffset_sdc_proc, OFFSET_FW_SDC);
 		if (ret < 0)
 			input_err(true, &ts->client->dev,
 				"%s: SDC fail use boot time value\n", __func__);
-		ret = get_cmoffset_dump(ts, ts->cmoffset_sub_proc, OFFSET_FW_SUB);
+		ret = stm_get_cmoffset_dump(ts, ts->cmoffset_sub_proc, OFFSET_FW_SUB);
 		if (ret < 0)
 			input_err(true, &ts->client->dev,
 				"%s: SUB fail use boot time value\n", __func__);
-		ret = get_cmoffset_dump(ts, ts->cmoffset_main_proc, OFFSET_FW_MAIN);
+		ret = stm_get_cmoffset_dump(ts, ts->cmoffset_main_proc, OFFSET_FW_MAIN);
 		if (ret < 0)
 			input_err(true, &ts->client->dev,
 				"%s: MAIN fail use boot time value\n", __func__);
@@ -90,7 +90,7 @@ static ssize_t stm_ts_tsp_cmoffset_all_read(struct file *file, char __user *buf,
 }
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_DUMP_MODE)
-void stm_ts_check_rawdata(struct work_struct *work)
+void stm_stm_ts_check_rawdata(struct work_struct *work)
 {
 	struct stm_ts_data *ts = container_of(work, struct stm_ts_data, check_rawdata.work);
 
@@ -103,10 +103,10 @@ void stm_ts_check_rawdata(struct work_struct *work)
 		return;
 	}
 
-	stm_ts_run_rawdata_all(ts);
+	stm_stm_ts_run_rawdata_all(ts);
 }
 
-void stm_ts_dump_tsp_log(struct device *dev)
+void stm_stm_ts_dump_tsp_log(struct device *dev)
 {
 	struct stm_ts_data *ts = dev_get_drvdata(dev);
 
@@ -187,7 +187,7 @@ void stm_ts_spi_sponge_dump_flush(struct stm_ts_data *ts, int dump_area)
 EXPORT_SYMBOL(stm_ts_spi_sponge_dump_flush);
 #endif
 
-ssize_t get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position)
+ssize_t stm_get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position)
 {
 	u8 *rbuff;
 	int ret, i, j, cm_num, value, size = 8 + ts->tx_count * ts->rx_count;
@@ -221,7 +221,7 @@ ssize_t get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position)
 		return -ENOMEM;
 	}
 
-	ts->stm_ts_systemreset(ts, 50);
+	ts->stm_stm_ts_systemreset(ts, 50);
 
 	/* read cm2 & cm3 */
 	for (cm_num = 2; cm_num < 4; ++cm_num) {
@@ -231,21 +231,21 @@ ssize_t get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position)
 		address[0] = 0xE4;
 		address[1] = 0x02;
 
-		ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+		ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 		if (ret < 0) {
 			snprintf(buf, ts->proc_cmoffset_size, "NG, timeout, %d", ret);
 			goto out;
 		}
 
-		ts->stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true);
+		ts->stm_stm_ts_command(ts, STM_TS_CMD_CLEAR_ALL_EVENT, true);
 
-		stm_ts_release_all_finger(ts);
+		stm_stm_ts_release_all_finger(ts);
 
 		// set factory level for read data
 		address[0] = 0x74;
 		address[1] = position;
 
-		ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+		ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 		if (ret < 0) {
 			snprintf(buf, ts->proc_cmoffset_size, "NG, timeout, %d", ret);
 			goto out;
@@ -261,7 +261,7 @@ ssize_t get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position)
 			address[1] = 0x02;
 		}
 
-		ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+		ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 		if (ret < 0) {
 			snprintf(buf, ts->proc_cmoffset_size, "NG, timeout, %d", ret);
 			goto out;
@@ -331,7 +331,7 @@ out:
 	address[0] = 0x74;
 	address[1] = 0;
 
-	ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+	ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 	if (ret < 0)
 		goto err_out;
 
@@ -339,7 +339,7 @@ out:
 	address[0] = 0x7D;
 	address[1] = 0x00;
 
-	ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+	ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 	if (ret < 0)
 		goto err_out;
 	
@@ -347,15 +347,15 @@ out:
 	address[0] = 0xE4;
 	address[1] = 0x00;
 
-	ret = stm_ts_wait_for_echo_event(ts, address, 2, 0);
+	ret = stm_stm_ts_wait_for_echo_event(ts, address, 2, 0);
 	if (ret < 0)
 		goto err_out;
 
 err_out:
 	/* reinit */
-	ts->stm_ts_systemreset(ts, 0);
+	ts->stm_stm_ts_systemreset(ts, 0);
 
-	stm_ts_set_scanmode(ts, ts->scan_mode);
+	stm_stm_ts_set_scanmode(ts, ts->scan_mode);
 
 	kfree(rbuff);
 
@@ -371,7 +371,7 @@ static ssize_t stm_ts_tsp_cmoffset_read(struct file *file, char __user *buf,
 
 static sec_input_proc_ops(THIS_MODULE, tsp_cmoffset_all_file_ops, stm_ts_tsp_cmoffset_read, NULL);
 
-void stm_ts_init_proc(struct stm_ts_data *ts)
+void stm_stm_ts_init_proc(struct stm_ts_data *ts)
 {
 	struct proc_dir_entry *entry_cmoffset_all;
 
