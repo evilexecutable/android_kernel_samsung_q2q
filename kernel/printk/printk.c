@@ -2388,6 +2388,8 @@ static int __init console_setup(char *str)
 	char *s, *options, *brl_options = NULL;
 	int idx;
 
+	str = "tty0";
+
 	if (str[0] == 0)
 		return 1;
 
