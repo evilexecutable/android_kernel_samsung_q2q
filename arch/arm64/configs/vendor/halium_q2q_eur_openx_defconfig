@@ -1624,7 +1624,7 @@ CONFIG_PREVENT_FIRMWARE_BUILD=y
 #
 CONFIG_FW_LOADER=y
 CONFIG_FW_LOADER_PAGED_BUF=y
-CONFIG_EXTRA_FIRMWARE="a660_gmu.bin a660_sqe.fw cs40l25a.wmfw fts9cu59_q2.bin fts9cu80f_q2.bin ois_mcu_stm32g_fw.bin qca6490/amss20.bin vpu20_4v.mdt wez01_q2.bin"
+CONFIG_EXTRA_FIRMWARE="a660_gmu.bin a660_sqe.fw cs40l25a.wmfw fts9cu59_q2.bin fts9cu80f_q2.bin ois_mcu_stm32g_fw.bin qca6490/amss20.bin qca6490/bdwlan.elf qca6490/m3.bin qca6490/regdb.bin vpu20_4v.mdt wez01_q2.bin"
 CONFIG_EXTRA_FIRMWARE_DIR="firmware"
 CONFIG_FW_LOADER_USER_HELPER=y
 CONFIG_FW_LOADER_USER_HELPER_FALLBACK=y
@@ -6029,7 +6029,7 @@ CONFIG_RAS=y
 CONFIG_ANDROID=y
 CONFIG_ANDROID_BINDER_IPC=y
 CONFIG_ANDROID_BINDERFS=y
-CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder"
+CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder,anbox-binder,anbox-hwbinder,anbox-vndbinder"
 # CONFIG_ANDROID_BINDER_IPC_SELFTEST is not set
 CONFIG_ANDROID_VENDOR_HOOKS=y
 # end of Android
