@@ -3,7 +3,7 @@
  *
  * This file contains AppArmor af_unix fine grained mediation
  *
- * Copyright 2014 Canonical Ltd.
+ * Copyright 2018 Canonical Ltd.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,13 +13,14 @@
 
 #include <net/tcp_states.h>
 
+#include "include/audit.h"
 #include "include/af_unix.h"
 #include "include/apparmor.h"
-#include "include/context.h"
 #include "include/file.h"
 #include "include/label.h"
 #include "include/path.h"
 #include "include/policy.h"
+#include "include/cred.h"
 
 static inline struct sock *aa_sock(struct unix_sock *u)
 {
