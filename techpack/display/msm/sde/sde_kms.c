@@ -136,7 +136,7 @@ static bool g_cont_splash = true;
 #if defined(CONFIG_DISPLAY_SAMSUNG) && defined(CONFIG_UML)
 static void _reg_log_init(void)
 #else
-static void _reg_log_init()
+static void _reg_log_init(void)
 #endif
 {
 	sde_dbg_init(NULL);
