@@ -1421,7 +1421,7 @@ void stm_stm_ts_read_info_work(struct work_struct *work)
 #endif
 }
 
-void stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable)
+void stm_stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable)
 {
 	int ret;
 	u8 address;
@@ -1454,7 +1454,7 @@ void stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable)
 	}
 
 }
-EXPORT_SYMBOL(stm_ts_spi_set_cover_type);
+EXPORT_SYMBOL(stm_stm_ts_spi_set_cover_type);
 
 int stm_stm_ts_set_temperature(struct device *dev, u8 temperature_data)
 {
@@ -1788,7 +1788,7 @@ int stm_stm_ts_pocket_mode_enable(struct stm_ts_data *ts, u8 enable)
 	return ret;
 }
 
-int stm_ts_sip_mode_enable(struct stm_ts_data *ts)
+int stm_stm_ts_sip_mode_enable(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 reg[3] = { 0 };
@@ -1806,7 +1806,7 @@ int stm_ts_sip_mode_enable(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_game_mode_enable(struct stm_ts_data *ts)
+int stm_stm_ts_game_mode_enable(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 reg[3] = { 0 };
@@ -1824,7 +1824,7 @@ int stm_ts_game_mode_enable(struct stm_ts_data *ts)
 	return ret;
 }
 
-int stm_ts_note_mode_enable(struct stm_ts_data *ts)
+int stm_stm_ts_note_mode_enable(struct stm_ts_data *ts)
 {
 	int ret;
 	u8 reg[3] = { 0 };
@@ -1869,7 +1869,7 @@ int get_stm_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata)
 
 int stm_set_stm_nvm_data(struct stm_ts_data *ts, u8 type, u8 *buf)
 {
-	return stm_set_nvm_data_by_size(ts, stm_nvm_data[type].offset, stm_nvm_data[type].length, buf);
+	return stm_stm_set_nvm_data_by_size(ts, stm_nvm_data[type].offset, stm_nvm_data[type].length, buf);
 }
 
 
@@ -1916,7 +1916,7 @@ int stm_get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *
 	return ret;
 }
 
-int stm_set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf)
+int stm_stm_set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf)
 {
 	u8 buff[256] = { 0 };
 	u8 remaining, index, sendinglength;
@@ -2044,10 +2044,10 @@ int stm_tclm_data_write(struct spi_device *client, int address)
 			nbuff[i] = ts->tdata->nvdata.cal_pos_hist_queue[i - stm_nvm_data[STM_TS_NVM_OFFSET_HISTORY_QUEUE_ZERO].offset];
 		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_FLAG].offset] = ts->tdata->nvdata.cal_fail_falg;
 		nbuff[stm_nvm_data[STM_TS_NVM_OFFSET_CAL_FAIL_COUNT].offset] = ts->tdata->nvdata.cal_fail_cnt;
-		ret = stm_set_nvm_data_by_size(ts, stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset, STM_TS_NVM_OFFSET_ALL, nbuff);
+		ret = stm_stm_set_nvm_data_by_size(ts, stm_nvm_data[STM_TS_NVM_OFFSET_FAC_RESULT].offset, STM_TS_NVM_OFFSET_ALL, nbuff);
 		return ret;
 	case SEC_TCLM_NVM_TEST:
-		ret = stm_set_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
+		ret = stm_stm_set_nvm_data_by_size(ts, STM_TS_NVM_OFFSET_ALL + SEC_TCLM_NVM_OFFSET,
 			SEC_TCLM_NVM_OFFSET_LENGTH, ts->tdata->tclm);
 		return ret;
 	default:

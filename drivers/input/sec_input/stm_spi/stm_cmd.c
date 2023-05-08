@@ -5565,9 +5565,9 @@ static void clear_cover_mode(void *device_data)
 	} else {
 		if (sec->cmd_param[0] > 1) {
 			ts->plat_data->cover_type = sec->cmd_param[1];
-			stm_ts_spi_set_cover_type(ts, true);
+			stm_stm_ts_spi_set_cover_type(ts, true);
 		} else {
-			stm_ts_spi_set_cover_type(ts, false);
+			stm_stm_ts_spi_set_cover_type(ts, false);
 		}
 
 		snprintf(buff, sizeof(buff), "OK");
@@ -6551,7 +6551,7 @@ static void set_sip_mode(void *device_data)
 			goto out_sip_mode;
 		}
 
-		ret = stm_ts_sip_mode_enable(ts);
+		ret = stm_stm_ts_sip_mode_enable(ts);
 		if (ret < 0) {
 			snprintf(buff, sizeof(buff), "NG");
 			sec->cmd_state = SEC_CMD_STATUS_FAIL;
@@ -6592,7 +6592,7 @@ static void set_game_mode(void *device_data)
 			goto out_game_mode;
 		}
 
-		ret = stm_ts_game_mode_enable(ts);
+		ret = stm_stm_ts_game_mode_enable(ts);
 		if (ret < 0) {
 			snprintf(buff, sizeof(buff), "NG");
 			sec->cmd_state = SEC_CMD_STATUS_FAIL;
@@ -6633,7 +6633,7 @@ static void set_note_mode(void *device_data)
 			goto out_note_mode;
 		}
 
-		ret = stm_ts_note_mode_enable(ts);
+		ret = stm_stm_ts_note_mode_enable(ts);
 		if (ret < 0) {
 			snprintf(buff, sizeof(buff), "NG");
 			sec->cmd_state = SEC_CMD_STATUS_FAIL;
