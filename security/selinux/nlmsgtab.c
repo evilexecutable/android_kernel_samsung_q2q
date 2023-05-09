@@ -233,4 +233,16 @@ void selinux_nlmsg_init(void)
 	else
 		nlmsg_set_perm_for_type(NETLINK_ROUTE_SOCKET__NLMSG_READ,
 					RTM_GETLINK);
+
+	if (selinux_android_nlroute_getneigh()) {
+		nlmsg_set_perm_for_type(NETLINK_ROUTE_SOCKET__NLMSG_GETNEIGH,
+					RTM_GETNEIGH);
+		nlmsg_set_perm_for_type(NETLINK_ROUTE_SOCKET__NLMSG_GETNEIGH,
+					RTM_GETNEIGHTBL);
+	} else {
+		nlmsg_set_perm_for_type(NETLINK_ROUTE_SOCKET__NLMSG_READ,
+					RTM_GETNEIGH);
+		nlmsg_set_perm_for_type(NETLINK_ROUTE_SOCKET__NLMSG_READ,
+					RTM_GETNEIGHTBL);
+	}
 }
