@@ -72,7 +72,7 @@ COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 ############ TAS256x ############
 
 # for TAS256x Codec
-ifdef CONFIG_SND_SOC_TAS256x
+ifdef CONFIG_SND_SOC_TAS256X
 	TAS256x_OBJS += os_layer/src/tas256x-codec.o
 	TAS256x_OBJS += os_layer/src/tas256x-regmap.o
 	TAS256x_OBJS += physical_layer/src/tas256x.o
@@ -141,7 +141,7 @@ GCOV_PROFILE := y
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_TAS256x) += tas256x_dlkm.o
+obj-$(CONFIG_SND_SOC_TAS256X) += tas256x_dlkm.o
 tas256x_dlkm-y := $(TAS256x_OBJS)
 
 # inject some build related information
