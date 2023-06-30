@@ -265,7 +265,7 @@ ifeq ($(KERNEL_BUILD), 1)
 	obj-y	+= rouleur/
 endif
 
-ifdef CONFIG_SND_SOC_TAS256x
+ifdef CONFIG_SND_SOC_TAS256X
 	obj-y	 += tas256x/
 endif
 
