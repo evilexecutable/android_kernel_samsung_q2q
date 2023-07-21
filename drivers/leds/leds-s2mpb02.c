@@ -25,7 +25,6 @@
 #include <linux/debugfs.h>
 #include <linux/gpio.h>
 #include <linux/of_gpio.h>
-#include <linux/string.h>
 
 struct device *s2mpb02_led_dev;
 struct s2mpb02_led_data **global_led_datas;
@@ -152,128 +151,21 @@ static int s2mpb02_led_get_en_value(struct s2mpb02_led_data *led_data, int on)
 				/* controlled by GPIO */
 }
 
-static int s2mpb02_torch_control(int value) {
-	int i = 0, ret = 0;
-	int onoff = -1;
-	sysfs_flash_op = 0;
-
-	if (global_led_datas == NULL) {
-		pr_err("<%s> global_led_datas is NULL\n", __func__);
-		return -1;
-	}
-
-	for (i = 0; i < S2MPB02_LED_MAX; i++) {
-		if (global_led_datas[i] == NULL) {
-			pr_err("<%s> global_led_datas[%d] is NULL\n", __func__, i);
-			return -1;
-		}
-	}
-
-	pr_info("<%s> sysfs torch/flash value %d\n", __func__, onoff);
-	if (onoff == 0) {
-		// Torch OFF
-		onoff = 0;
-	} else if (onoff == 1) {
-		// Torch ON
-		onoff = S2MPB02_TORCH_OUT_I_60MA;
-	} else if (onoff == 100) {
-		// Factory Torch ON
-		onoff = S2MPB02_TORCH_OUT_I_240MA;
-	} else if (onoff == 200) {
-		pr_info("<%s> sysfs flash value %d\n", __func__, onoff);
-
-		/* Factory mode Turn on Flash */
-		/* set reserved reg. 0x63 for continuous flash on */
-		flash_config_factory = true;
-		ret = s2mpb02_write_reg(global_led_datas[S2MPB02_FLASH_LED_1]->i2c, 0x63, 0x5F);
-		if (ret < 0)
-			pr_info("[LED]%s , failed set flash register setting\n", __func__);
-		onoff = S2MPB02_FLASH_OUT_I_300MA;
-	} else if (onoff == 1001) {
-		// level 1 (Flashlight level 1)
-		onoff = S2MPB02_TORCH_OUT_I_40MA;
-#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
-		onoff = S2MPB02_TORCH_OUT_I_60MA;
-#endif
-	} else if (onoff == 1002) {
-		// level 2 (Flashlight level 2)
-		onoff = S2MPB02_TORCH_OUT_I_60MA;
-#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
-		onoff = S2MPB02_TORCH_OUT_I_120MA;
-#endif
-	} else if (onoff == 1003) {
-		// level 3
-		onoff = S2MPB02_TORCH_OUT_I_80MA;
-	} else if (onoff == 1004) {
-		// level 4 (Flashlight level 3)
-		onoff = S2MPB02_TORCH_OUT_I_100MA;
-#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
-		onoff = S2MPB02_TORCH_OUT_I_180MA;
-#endif
-	} else if (onoff == 1005) {
-		// level 5
-		onoff = S2MPB02_TORCH_OUT_I_120MA;
-	} else if (onoff == 1006) {
-		// level 6 (Flashlight level 4)
-		onoff = S2MPB02_TORCH_OUT_I_160MA;
-#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
-		onoff = S2MPB02_TORCH_OUT_I_240MA;
-#endif
-	} else if (onoff == 1007) {
-		// level 7
-		onoff = S2MPB02_TORCH_OUT_I_180MA;
-	} else if (onoff == 1008) {
-		// level 8
-		onoff = S2MPB02_TORCH_OUT_I_180MA;
-	} else if (onoff == 1009) {
-		// level 9 (Flashlight level 5)
-		onoff = S2MPB02_TORCH_OUT_I_200MA;
-#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
-		onoff = S2MPB02_TORCH_OUT_I_300MA;
-#endif
-	} else if (onoff == 1010) {
-		// level 10
-		onoff = S2MPB02_TORCH_OUT_I_200MA;
-	} else if ((2001 <= onoff) && (onoff <= 2015)) {
-		// Torch ON for tunning : Step 20mA ~ 300mA
-		onoff = onoff - 2000;
-		pr_info("<%s> torch level %d\n", __func__, onoff);
-	} else {
-		pr_err("<%s> value %d is invalid\n", __func__, onoff);
-		onoff = 0;
-	}
-
-	if (flash_config_factory) {
-		if (onoff == 0) {
-			s2mpb02_write_reg(global_led_datas[S2MPB02_FLASH_LED_1]->i2c, 0x63, 0x7F);
-			flash_config_factory = false;
-		}
-		s2mpb02_led_en(S2MPB02_FLASH_LED_1, onoff, S2MPB02_LED_TURN_WAY_GPIO);
-	} else
-		s2mpb02_led_en(S2MPB02_TORCH_LED_1, onoff, S2MPB02_LED_TURN_WAY_GPIO);
-
-	if (onoff)
-		sysfs_flash_op = 1;
-
-	return ret;
-}
-
 static void s2mpb02_led_set(struct led_classdev *led_cdev,
 						enum led_brightness value)
 {
-#if 1 /* spoof qcom torch for https://github.com/AyatanaIndicators/ayatana-indicator-power */
+	unsigned long flags;
 	struct s2mpb02_led_data *led_data
 		= container_of(led_cdev, struct s2mpb02_led_data, led);
 
 	pr_debug("[LED] %s\n", __func__);
 
-	if(value == 0)
-		s2mpb02_torch_control(0);
-	else
-		s2mpb02_torch_control(1);
-#endif
-}
+	spin_lock_irqsave(&led_data->value_lock, flags);
+	led_data->test_brightness = min_t(int, (int)value, (int)led_cdev->max_brightness);
+	spin_unlock_irqrestore(&led_data->value_lock, flags);
 
+	schedule_work(&led_data->work);
+}
 
 static void led_set(struct s2mpb02_led_data *led_data, enum s2mpb02_led_turn_way turn_way)
 {
@@ -616,12 +508,112 @@ EXPORT_SYMBOL(s2mpb02_ir_led_max_time);
 
 ssize_t s2mpb02_store(const char *buf)
 {
+	int i = 0, ret = 0;
 	int onoff = -1;
+	sysfs_flash_op = 0;
 
 	if (buf == NULL || kstrtouint(buf, 10, &onoff))
 		return -1;
 
-	return s2mpb02_torch_control(onoff);
+	if (global_led_datas == NULL) {
+		pr_err("<%s> global_led_datas is NULL\n", __func__);
+		return -1;
+	}
+
+	for (i = 0; i < S2MPB02_LED_MAX; i++) {
+		if (global_led_datas[i] == NULL) {
+			pr_err("<%s> global_led_datas[%d] is NULL\n", __func__, i);
+			return -1;
+		}
+	}
+
+	pr_info("<%s> sysfs torch/flash value %d\n", __func__, onoff);
+	if (onoff == 0) {
+		// Torch OFF
+		onoff = 0;
+	} else if (onoff == 1) {
+		// Torch ON
+		onoff = S2MPB02_TORCH_OUT_I_60MA;
+	} else if (onoff == 100) {
+		// Factory Torch ON
+		onoff = S2MPB02_TORCH_OUT_I_240MA;
+	} else if (onoff == 200) {
+		pr_info("<%s> sysfs flash value %d\n", __func__, onoff);
+
+		/* Factory mode Turn on Flash */
+		/* set reserved reg. 0x63 for continuous flash on */
+		flash_config_factory = true;
+		ret = s2mpb02_write_reg(global_led_datas[S2MPB02_FLASH_LED_1]->i2c, 0x63, 0x5F);
+		if (ret < 0)
+			pr_info("[LED]%s , failed set flash register setting\n", __func__);
+		onoff = S2MPB02_FLASH_OUT_I_300MA;
+	} else if (onoff == 1001) {
+		// level 1 (Flashlight level 1)
+		onoff = S2MPB02_TORCH_OUT_I_40MA;
+#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
+		onoff = S2MPB02_TORCH_OUT_I_60MA;
+#endif
+	} else if (onoff == 1002) {
+		// level 2 (Flashlight level 2)
+		onoff = S2MPB02_TORCH_OUT_I_60MA;
+#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
+		onoff = S2MPB02_TORCH_OUT_I_120MA;
+#endif
+	} else if (onoff == 1003) {
+		// level 3
+		onoff = S2MPB02_TORCH_OUT_I_80MA;
+	} else if (onoff == 1004) {
+		// level 4 (Flashlight level 3)
+		onoff = S2MPB02_TORCH_OUT_I_100MA;
+#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
+		onoff = S2MPB02_TORCH_OUT_I_180MA;
+#endif
+	} else if (onoff == 1005) {
+		// level 5
+		onoff = S2MPB02_TORCH_OUT_I_120MA;
+	} else if (onoff == 1006) {
+		// level 6 (Flashlight level 4)
+		onoff = S2MPB02_TORCH_OUT_I_160MA;
+#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
+		onoff = S2MPB02_TORCH_OUT_I_240MA;
+#endif
+	} else if (onoff == 1007) {
+		// level 7
+		onoff = S2MPB02_TORCH_OUT_I_180MA;
+	} else if (onoff == 1008) {
+		// level 8
+		onoff = S2MPB02_TORCH_OUT_I_180MA;
+	} else if (onoff == 1009) {
+		// level 9 (Flashlight level 5)
+		onoff = S2MPB02_TORCH_OUT_I_200MA;
+#if defined(CONFIG_SEC_BEYONDXQ_PROJECT)
+		onoff = S2MPB02_TORCH_OUT_I_300MA;
+#endif
+	} else if (onoff == 1010) {
+		// level 10
+		onoff = S2MPB02_TORCH_OUT_I_200MA;
+	} else if ((2001 <= onoff) && (onoff <= 2015)) {
+		// Torch ON for tunning : Step 20mA ~ 300mA
+		onoff = onoff - 2000;
+		pr_info("<%s> torch level %d\n", __func__, onoff);
+	} else {
+		pr_err("<%s> value %d is invalid\n", __func__, onoff);
+		onoff = 0;
+	}
+
+	if (flash_config_factory) {
+		if (onoff == 0) {
+			s2mpb02_write_reg(global_led_datas[S2MPB02_FLASH_LED_1]->i2c, 0x63, 0x7F);
+			flash_config_factory = false;
+		}
+		s2mpb02_led_en(S2MPB02_FLASH_LED_1, onoff, S2MPB02_LED_TURN_WAY_GPIO);
+	} else
+		s2mpb02_led_en(S2MPB02_TORCH_LED_1, onoff, S2MPB02_LED_TURN_WAY_GPIO);
+
+	if (onoff)
+		sysfs_flash_op = 1;
+
+	return 0;
 }
 EXPORT_SYMBOL(s2mpb02_store);
 
@@ -796,10 +788,6 @@ static int s2mpb02_led_probe(struct platform_device *pdev)
 		led_data->i2c = s2mpb02->i2c;
 		led_data->data = data;
 		led_data->led.name = data->name;
-		if(strcmp(data->name, "torch-sec1") == 0)
-			led_data->led.name = "torch-light";
-		else
-			led_data->led.name = data->name;
 		led_data->led.brightness_set = s2mpb02_led_set;
 		led_data->led.brightness = LED_OFF;
 		led_data->brightness = data->brightness;
@@ -809,9 +797,7 @@ static int s2mpb02_led_probe(struct platform_device *pdev)
 
 		mutex_init(&led_data->lock);
 		spin_lock_init(&led_data->value_lock);
-#if 0
 		INIT_WORK(&led_data->work, s2mpb02_led_work);
-#endif
 
 		ret = led_classdev_register(&pdev->dev, &led_data->led);
 		if (unlikely(ret)) {
