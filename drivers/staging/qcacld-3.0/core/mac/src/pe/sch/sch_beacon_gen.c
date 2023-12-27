@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2012-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -167,7 +167,7 @@ sch_append_addn_ie(struct mac_context *mac_ctx, struct pe_session *session,
 
 /**
  * sch_get_csa_ecsa_count_offset() - get the offset of Switch count field
- * @ie: pointer to the beggining of IEs in the beacon frame buffer
+ * @ie: pointer to the beginning of IEs in the beacon frame buffer
  * @ie_len: length of the IEs in the buffer
  * @csa_count_offset: pointer to the csa_count_offset variable in the caller
  * @ecsa_count_offset: pointer to the ecsa_count_offset variable in the caller
@@ -205,6 +205,9 @@ static void sch_get_csa_ecsa_count_offset(uint8_t *ie, uint32_t ie_len,
 		    elem_len == 4)
 			*ecsa_count_offset = offset +
 					SCH_ECSA_SWITCH_COUNT_OFFSET;
+
+		if (ie_len < elem_len)
+			return;
 
 		ie_len -= elem_len;
 		offset += elem_len;
@@ -304,8 +307,7 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 	populate_dot11f_supp_rates(mac_ctx, POPULATE_DOT11F_RATES_OPERATIONAL,
 				   &bcn_1->SuppRates, session);
 	populate_dot11f_ds_params(mac_ctx, &bcn_1->DSParams,
-				  wlan_reg_freq_to_chan(
-				  mac_ctx->pdev, session->curr_op_freq));
+				  session->curr_op_freq);
 
 	offset = sizeof(tAniBeaconStruct);
 	ptr = session->pSchBeaconFrameBegin + offset;
@@ -464,12 +466,23 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		/*
 		populate_dot11f_vht_ext_bss_load( mac_ctx, &bcn2.VHTExtBssLoad);
 		*/
-		populate_dot11f_vht_tx_power_env(mac_ctx,
-						 &bcn_2->vht_transmit_power_env,
-						 session->ch_width,
-						 session->curr_op_freq);
+		populate_dot11f_tx_power_env(mac_ctx,
+					     &bcn_2->transmit_power_env[0],
+					     session->ch_width,
+					     session->curr_op_freq,
+					     &bcn_2->num_transmit_power_env,
+					     false);
 		populate_dot11f_qcn_ie(mac_ctx, session, &bcn_2->qcn_ie,
 				       QCN_IE_ATTR_ID_ALL);
+	}
+
+	if (wlan_reg_is_6ghz_chan_freq(session->curr_op_freq)) {
+		populate_dot11f_tx_power_env(mac_ctx,
+					     &bcn_2->transmit_power_env[0],
+					     session->ch_width,
+					     session->curr_op_freq,
+					     &bcn_2->num_transmit_power_env,
+					     false);
 	}
 
 	if (lim_is_session_he_capable(session)) {
@@ -483,7 +496,6 @@ sch_set_fixed_beacon_fields(struct mac_context *mac_ctx, struct pe_session *sess
 		populate_dot11f_he_bss_color_change(mac_ctx, session,
 					&bcn_2->bss_color_change);
 	}
-
 
 	populate_dot11f_ext_cap(mac_ctx, is_vht_enabled, &bcn_2->ExtCap,
 				session);
@@ -733,6 +745,8 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 						     uint32_t *DefProbeRspIeBitmap,
 						     tDot11fProbeResponse *prb_rsp)
 {
+	uint8_t i;
+	uint16_t num_tpe = beacon2->num_transmit_power_env;
 
 	if (beacon2->Country.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap, WLAN_ELEMID_COUNTRY);
@@ -860,13 +874,17 @@ void lim_update_probe_rsp_template_ie_bitmap_beacon2(struct mac_context *mac,
 			     (void *)&beacon2->VHTOperation,
 			     sizeof(beacon2->VHTOperation));
 	}
-	if (beacon2->vht_transmit_power_env.present) {
-		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
-					WLAN_ELEMID_VHT_TX_PWR_ENVLP);
-		qdf_mem_copy((void *)&prb_rsp->vht_transmit_power_env,
-			     (void *)&beacon2->vht_transmit_power_env,
-			     sizeof(beacon2->vht_transmit_power_env));
+
+	for (i = 0; i < num_tpe; i++) {
+		if (beacon2->transmit_power_env[i].present) {
+			set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
+						WLAN_ELEMID_VHT_TX_PWR_ENVLP);
+			qdf_mem_copy((void *)&prb_rsp->transmit_power_env[i],
+				     (void *)&beacon2->transmit_power_env[i],
+				     sizeof(beacon2->transmit_power_env[i]));
+		}
 	}
+
 	if (beacon2->VHTExtBssLoad.present) {
 		set_probe_rsp_ie_bitmap(DefProbeRspIeBitmap,
 					WLAN_ELEMID_EXT_BSS_LOAD);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -890,116 +890,6 @@ ucfg_mlme_set_pmkid_modes(struct wlan_objmgr_psoc *psoc,
 			  uint32_t val);
 
 /**
- * ucfg_mlme_get_twt_requestor() - Get twt requestor
- * @psoc: pointer to psoc object
- * @val:  Pointer to the value which will be filled for the caller
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_get_twt_requestor(struct wlan_objmgr_psoc *psoc,
-			    bool *val);
-
-/**
- * ucfg_mlme_set_twt_requestor() - Set twt requestor
- * @psoc: pointer to psoc object
- * @val:  value that needs to set to this config
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_set_twt_requestor(struct wlan_objmgr_psoc *psoc,
-			    bool val);
-
-/**
- * ucfg_mlme_get_twt_responder() - Get twt responder
- * @psoc: pointer to psoc object
- * @val:  Pointer to the value which will be filled for the caller
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_get_twt_responder(struct wlan_objmgr_psoc *psoc,
-			    bool *val);
-
-/**
- * ucfg_mlme_set_twt_responder() - Set twt responder
- * @psoc: pointer to psoc object
- * @val:  value that needs to set to this config
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_set_twt_responder(struct wlan_objmgr_psoc *psoc,
-			    bool val);
-
-/**
- * ucfg_mlme_get_bcast_twt() - Get bcast twt
- * @psoc: pointer to psoc object
- * @val:  Pointer to the value which will be filled for the caller
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_get_bcast_twt(struct wlan_objmgr_psoc *psoc,
-			bool *val);
-
-/**
- * ucfg_mlme_set_bcast_twt() - Set bcast twt
- * @psoc: pointer to psoc object
- * @val:  value that needs to set to this config
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_set_bcast_twt(struct wlan_objmgr_psoc *psoc,
-			bool val);
-
-/**
- * ucfg_mlme_get_twt_congestion_timeout() - Get twt congestion timeout
- * @psoc: pointer to psoc object
- * @val:  Pointer to the value which will be filled for the caller
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_get_twt_congestion_timeout(struct wlan_objmgr_psoc *psoc,
-				     uint32_t *val);
-
-/**
- * ucfg_mlme_set_twt_congestion_timeout() - Set twt congestion timeout
- * @psoc: pointer to psoc object
- * @val:  value that needs to set to this config
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_set_twt_congestion_timeout(struct wlan_objmgr_psoc *psoc,
-				     uint32_t val);
-
-/**
- * ucfg_mlme_get_enable_twt() - Get global twt config support
- * @psoc: pointer to psoc object
- * @val:  Pointer to the value which will be filled for the caller
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_get_enable_twt(struct wlan_objmgr_psoc *psoc,
-			 bool *val);
-
-/**
- * ucfg_mlme_set_enable_twt() - Set global twt config support
- * @psoc: pointer to psoc object
- * @val:  value that needs to set to this config
- *
- * Return: QDF Status
- */
-QDF_STATUS
-ucfg_mlme_set_enable_twt(struct wlan_objmgr_psoc *psoc,
-			 bool val);
-
-/**
  * ucfg_mlme_get_dot11p_mode() - Get the setting about 802.11p mode
  * @psoc: pointer to psoc object
  * @out_mode:  Pointer to the mode which will be filled for the caller
@@ -1437,6 +1327,22 @@ QDF_STATUS ucfg_mlme_set_assoc_sta_limit(struct wlan_objmgr_psoc *psoc,
 }
 
 /**
+ * ucfg_mlme_get_assoc_sta_limit() - Get the assoc sta limit
+ * @psoc: pointer to psoc object
+ * @value: Pointer to variable that needs to be filled by MLME
+ *
+ * Inline UCFG API to be used by HDD/OSIF callers
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_get_assoc_sta_limit(struct wlan_objmgr_psoc *psoc,
+					 int *value)
+{
+	return wlan_mlme_get_assoc_sta_limit(psoc, value);
+}
+
+/**
  * ucfg_mlme_get_listen_interval() - Get listen interval
  * @psoc: pointer to psoc object
  * @value: Pointer to variable that needs to be filled by MLME
@@ -1858,6 +1764,23 @@ QDF_STATUS ucfg_mlme_get_bigtk_support(struct wlan_objmgr_psoc *psoc,
 				       bool *value)
 {
 	return wlan_mlme_get_bigtk_support(psoc, value);
+}
+
+/**
+ * ucfg_mlme_get_ocv_support() - Get whether ocv is supported or not.
+ *
+ * @psoc: pointer to psoc object
+ * @value: pointer to the value which will be filled for the caller
+ *
+ * Inline UCFG API to be used by HDD/OSIF callers to get the OCV support
+ *
+ * Return: QDF_STATUS_SUCCESS or QDF_STATUS_FAILURE
+ */
+static inline
+QDF_STATUS ucfg_mlme_get_ocv_support(struct wlan_objmgr_psoc *psoc,
+				     bool *value)
+{
+	return wlan_mlme_get_ocv_support(psoc, value);
 }
 
 /**
@@ -2741,6 +2664,36 @@ ucfg_mlme_set_11d_enabled(struct wlan_objmgr_psoc *psoc, bool value)
 }
 
 /**
+ * ucfg_mlme_is_rf_test_mode_enabled() - Get rf test mode flag
+ * @psoc: pointer to psoc object
+ * @value: Value that needs to be set from the caller
+ *
+ * Inline UCFG API to be used by HDD/OSIF callers
+ *
+ * Return: QDF Status
+ */
+static inline QDF_STATUS
+ucfg_mlme_is_rf_test_mode_enabled(struct wlan_objmgr_psoc *psoc, bool *value)
+{
+	return wlan_mlme_is_rf_test_mode_enabled(psoc, value);
+}
+
+/**
+ * ucfg_mlme_set_rf_test_mode_enabled() - Set rf test mode flag
+ * @psoc: pointer to psoc object
+ * @value: Value that needs to be set from the caller
+ *
+ * Inline UCFG API to be used by HDD/OSIF callers
+ *
+ * Return: QDF Status
+ */
+static inline QDF_STATUS
+ucfg_mlme_set_rf_test_mode_enabled(struct wlan_objmgr_psoc *psoc, bool value)
+{
+	return wlan_mlme_set_rf_test_mode_enabled(psoc, value);
+}
+
+/**
  * ucfg_mlme_get_opr_rate() - Get operational rate set
  * @psoc: pointer to vdev object
  * @buf: buffer to get rates set
@@ -3251,6 +3204,34 @@ static inline QDF_STATUS
 ucfg_mlme_get_wmm_mode(struct wlan_objmgr_psoc *psoc, uint8_t *value)
 {
 	return wlan_mlme_get_wmm_mode(psoc, value);
+}
+
+/**
+ * ucfg_mlme_cfg_get_wlm_level() - Get the WLM level value
+ * @psoc: pointer to psoc object
+ * @level: level that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_cfg_get_wlm_level(struct wlan_objmgr_psoc *psoc,
+				       uint8_t *level)
+{
+	return mlme_get_cfg_wlm_level(psoc, level);
+}
+
+/**
+ * ucfg_mlme_cfg_get_wlm_reset() - Get the WLM reset flag
+ * @psoc: pointer to psoc object
+ * @reset: reset that needs to be filled.
+ *
+ * Return: QDF Status
+ */
+static inline
+QDF_STATUS ucfg_mlme_cfg_get_wlm_reset(struct wlan_objmgr_psoc *psoc,
+				       bool *reset)
+{
+	return mlme_get_cfg_wlm_reset(psoc, reset);
 }
 
 #ifdef WLAN_FEATURE_11AX
@@ -4020,6 +4001,18 @@ ucfg_mlme_set_obss_color_collision_offload_enabled(
 		struct wlan_objmgr_psoc *psoc, uint8_t value);
 
 /**
+ * ucfg_mlme_set_bss_color_collision_det_sta() - Enable bss color
+ * collision detection offload for STA mode
+ * @psoc:   pointer to psoc object
+ * @value:  enable or disable
+ *
+ * Return: QDF Status
+ */
+QDF_STATUS
+ucfg_mlme_set_bss_color_collision_det_sta(struct wlan_objmgr_psoc *psoc,
+					  uint8_t value);
+
+/**
  * ucfg_mlme_set_restricted_80p80_bw_supp() - Set the restricted 80p80 support
  * @psoc: pointer to psoc object
  * @restricted_80p80_supp: Value to be set from the caller
@@ -4194,4 +4187,46 @@ ucfg_mlme_set_roam_reason_vsie_status(struct wlan_objmgr_psoc *psoc,
 }
 
 #endif
+
+/**
+ * ucfg_mlme_set_user_ps()  - Set the PS user config
+ * @psoc: pointer to psoc object
+ * @vdev_id: Vdev id
+ * @ps_enable: Flag to indicate if user PS is enabled
+ *
+ * Return: QDF_STATUS
+ */
+static inline
+QDF_STATUS ucfg_mlme_set_user_ps(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id,
+				 bool ps_enable)
+{
+	return mlme_set_user_ps(psoc, vdev_id, ps_enable);
+}
+
+/**
+ * ucfg_mlme_get_user_ps()  - Get user PS flag
+ * @psoc: pointer to psoc object
+ * @vdev_id: Vdev id
+ *
+ * Return: True if user ps is enabled else false
+ */
+static inline
+bool ucfg_mlme_get_user_ps(struct wlan_objmgr_psoc *psoc, uint8_t vdev_id)
+{
+	return mlme_get_user_ps(psoc, vdev_id);
+}
+
+/**
+ * ucfg_mlme_is_sta_mon_conc_supported() - Check if STA + Monitor mode
+ * concurrency is supported
+ * @psoc: pointer to psoc object
+ *
+ * Return: True if supported, else false.
+ */
+static inline bool
+ucfg_mlme_is_sta_mon_conc_supported(struct wlan_objmgr_psoc *psoc)
+{
+	return wlan_mlme_is_sta_mon_conc_supported(psoc);
+}
+
 #endif /* _WLAN_MLME_UCFG_API_H_ */

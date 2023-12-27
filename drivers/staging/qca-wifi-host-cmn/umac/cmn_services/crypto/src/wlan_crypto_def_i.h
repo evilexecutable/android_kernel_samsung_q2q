@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -266,6 +266,8 @@ static inline void wlan_crypto_put_be64(u8 *a, u64 val)
 #define RSN_AUTH_KEY_MGMT_FT_FILS_SHA384\
 					WLAN_RSN_SEL(17)
 #define RSN_AUTH_KEY_MGMT_OWE           WLAN_RSN_SEL(18)
+#define RSN_AUTH_KEY_MGMT_FT_PSK_SHA384 WLAN_RSN_SEL(19)
+#define RSN_AUTH_KEY_MGMT_PSK_SHA384    WLAN_RSN_SEL(20)
 
 #define RSN_AUTH_KEY_MGMT_CCKM          (WLAN_RSN_CCKM_AKM)
 #define RSN_AUTH_KEY_MGMT_OSEN          (0x019a6f50)
@@ -290,8 +292,7 @@ static inline void wlan_crypto_put_be64(u8 *a, u64 val)
 #define CLEAR_PARAM(__param, __val)  ((__param) &= ((~1) << (__val)))
 
 
-#define RESET_AUTHMODE(_param)       ((_param)->authmodeset = \
-					(1 << WLAN_CRYPTO_AUTH_OPEN))
+#define RESET_AUTHMODE(_param)       ((_param)->authmodeset = 0)
 
 #define SET_AUTHMODE(_param, _mode)  ((_param)->authmodeset |= (1 << (_mode)))
 #define HAS_AUTHMODE(_param, _mode)  ((_param)->authmodeset &  (1 << (_mode)))
@@ -310,8 +311,7 @@ static inline void wlan_crypto_put_be64(u8 *a, u64 val)
 		(((_param1)->authmodeset & (_param2)->authmodeset) != 0)
 
 
-#define RESET_UCAST_CIPHERS(_param)   ((_param)->ucastcipherset =\
-					(1 << WLAN_CRYPTO_CIPHER_NONE))
+#define RESET_UCAST_CIPHERS(_param)   ((_param)->ucastcipherset = 0)
 #define SET_UCAST_CIPHER(_param, _c)  ((_param)->ucastcipherset |= (1 << (_c)))
 #define HAS_UCAST_CIPHER(_param, _c)  ((_param)->ucastcipherset & (1 << (_c)))
 
@@ -332,8 +332,7 @@ static inline void wlan_crypto_put_be64(u8 *a, u64 val)
 #define UCIPHER_IS_SMS4(_param)    \
 		HAS_UCAST_CIPHER((_param), WLAN_CRYPTO_CIPHER_WAPI_SMS4)
 
-#define RESET_MCAST_CIPHERS(_param)   ((_param)->mcastcipherset = \
-					(1 << WLAN_CRYPTO_CIPHER_NONE))
+#define RESET_MCAST_CIPHERS(_param)   ((_param)->mcastcipherset = 0)
 #define SET_MCAST_CIPHER(_param, _c)  ((_param)->mcastcipherset |= (1 << (_c)))
 #define HAS_MCAST_CIPHER(_param, _c)  ((_param)->mcastcipherset & (1 << (_c)))
 #define HAS_ANY_MCAST_CIPHER(_param)  ((_param)->mcastcipherset)

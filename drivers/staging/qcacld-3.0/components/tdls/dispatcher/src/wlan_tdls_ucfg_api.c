@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -34,6 +34,7 @@
 #include "wlan_scan_ucfg_api.h"
 #include "wlan_tdls_cfg.h"
 #include "cfg_ucfg_api.h"
+#include "wlan_tdls_api.h"
 
 QDF_STATUS ucfg_tdls_init(void)
 {
@@ -316,6 +317,38 @@ QDF_STATUS ucfg_tdls_psoc_open(struct wlan_objmgr_psoc *psoc)
 	return status;
 }
 
+#ifdef WLAN_FEATURE_11AX
+void ucfg_tdls_update_fw_11ax_capability(struct wlan_objmgr_psoc *psoc,
+					 bool is_fw_tdls_11ax_capable)
+{
+	struct tdls_soc_priv_obj *soc_obj;
+
+	soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+							WLAN_UMAC_COMP_TDLS);
+	if (!soc_obj) {
+		tdls_err("Failed to get tdls psoc component");
+		return;
+	}
+
+	soc_obj->fw_tdls_11ax_capability = is_fw_tdls_11ax_capable;
+}
+
+bool  ucfg_tdls_is_fw_11ax_capable(struct wlan_objmgr_psoc *psoc)
+{
+	struct tdls_soc_priv_obj *soc_obj;
+
+	soc_obj = wlan_objmgr_psoc_get_comp_private_obj(psoc,
+							WLAN_UMAC_COMP_TDLS);
+	if (!soc_obj) {
+		tdls_err("Failed to get tdls psoc component");
+		return false;
+	}
+	tdls_debug("FW 11AX capability %d", soc_obj->fw_tdls_11ax_capability);
+
+	return soc_obj->fw_tdls_11ax_capability;
+}
+#endif
+
 QDF_STATUS ucfg_tdls_update_config(struct wlan_objmgr_psoc *psoc,
 				   struct tdls_start_params *req)
 {
@@ -487,7 +520,6 @@ static QDF_STATUS ucfg_tdls_post_msg_flush_cb(struct scheduler_msg *msg)
 	struct wlan_objmgr_vdev *vdev = NULL;
 
 	switch (msg->type) {
-	case TDLS_CMD_TEARDOWN_LINKS:
 	case TDLS_NOTIFY_RESET_ADAPTERS:
 		ptr = NULL;
 		break;
@@ -826,23 +858,14 @@ QDF_STATUS ucfg_tdls_responder(struct tdls_set_responder_req *req)
 	return status;
 }
 
+void ucfg_tdls_teardown_links_sync(struct wlan_objmgr_psoc *psoc)
+{
+	return wlan_tdls_teardown_links_sync(psoc);
+}
+
 QDF_STATUS ucfg_tdls_teardown_links(struct wlan_objmgr_psoc *psoc)
 {
-	QDF_STATUS status;
-	struct scheduler_msg msg = {0, };
-
-	tdls_debug("Enter ");
-
-	msg.bodyptr = psoc;
-	msg.callback = tdls_process_cmd;
-	msg.flush_callback = ucfg_tdls_post_msg_flush_cb;
-	msg.type = TDLS_CMD_TEARDOWN_LINKS;
-	status = scheduler_post_message(QDF_MODULE_ID_HDD,
-					QDF_MODULE_ID_TDLS,
-					QDF_MODULE_ID_OS_IF, &msg);
-
-	tdls_debug("Exit ");
-	return status;
+	return wlan_tdls_teardown_links(psoc);
 }
 
 QDF_STATUS ucfg_tdls_notify_reset_adapter(struct wlan_objmgr_vdev *vdev)
