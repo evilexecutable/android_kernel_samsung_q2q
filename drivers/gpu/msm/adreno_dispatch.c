@@ -504,6 +504,7 @@ static inline int adreno_dispatcher_requeue_cmdobj(
 		spin_unlock(&drawctxt->lock);
 		/* get rid of this drawobj since the context is bad */
 		kgsl_drawobj_destroy(drawobj);
+		pr_info("return -ENOENT at <%s: %d>", __FILE__, __LINE__);
 		return -ENOENT;
 	}
 
@@ -1105,8 +1106,10 @@ static inline int _check_context_state(struct kgsl_context *context)
 	if (kgsl_context_invalid(context))
 		return -EDEADLK;
 
-	if (kgsl_context_detached(context))
+	if (kgsl_context_detached(context)) {
+		pr_err("return -ENOENT at <%s: %d>", __FILE__, __LINE__);
 		return -ENOENT;
+	}
 
 	return 0;
 }
@@ -1125,8 +1128,8 @@ static inline bool _verify_ib(struct kgsl_device_private *dev_priv,
 	}
 
 	/* Make sure that the address is in range and dword aligned */
-	if (!kgsl_mmu_gpuaddr_in_range(private->pagetable, ib->gpuaddr) ||
-	    !IS_ALIGNED(ib->gpuaddr, 4)) {
+	if (!kgsl_mmu_gpuaddr_in_range(private->pagetable, ib->gpuaddr,
+		ib->size) || !IS_ALIGNED(ib->gpuaddr, 4)) {
 		pr_context(device, context, "ctxt %d invalid ib gpuaddr %llX\n",
 			context->id, ib->gpuaddr);
 		return false;

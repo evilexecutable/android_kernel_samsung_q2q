@@ -639,7 +639,6 @@ static int spcom_handle_create_channel_command(void *cmd_buf, int cmd_size)
 	mutex_unlock(&spcom_dev->chdev_count_lock);
 	if (ret)
 		spcom_pr_err("failed to create ch[%s], ret [%d]\n", cmd->ch_name, ret);
-
 	return ret;
 }
 

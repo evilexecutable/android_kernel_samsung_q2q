@@ -1600,6 +1600,7 @@ static void hid_output_field(const struct hid_device *hid,
 	}
 }
 
+
 /*
  * Compute the size of a report.
  */

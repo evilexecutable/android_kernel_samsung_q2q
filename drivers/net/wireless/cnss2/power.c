@@ -4,7 +4,12 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/of.h>
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
 #include <linux/of_gpio.h>
+#include <linux/gpio.h>
+#else
+#include <linux/of_gpio.h>
+#endif
 #include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
 #if IS_ENABLED(CONFIG_QCOM_COMMAND_DB)
@@ -58,6 +63,9 @@ static struct cnss_clk_cfg cnss_clk_list[] = {
 #define WLAN_EN_ACTIVE			"wlan_en_active"
 #define WLAN_EN_SLEEP			"wlan_en_sleep"
 #define WLAN_VREGS_PROP			"wlan_vregs"
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
+#define WLAN_FEM_SEL			"wlan_fem_sel"
+#endif
 
 #define BOOTSTRAP_DELAY			1000
 #define WLAN_ENABLE_DELAY		10000
@@ -789,6 +797,18 @@ int cnss_get_pinctrl(struct cnss_plat_data *plat_priv)
 		pinctrl_info->xo_clk_gpio = -EINVAL;
 	}
 
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
+	/* Added for detecting FEM in SS B2Q project Hihg == NXP / Low == Qorvo */
+	if (of_find_property(dev->of_node, WLAN_FEM_SEL, NULL)) {
+		pinctrl_info->fem_sel_gpio = of_get_named_gpio(dev->of_node,
+							     WLAN_FEM_SEL, 0);
+		cnss_pr_err("FEM selection GPIO: %d\n", pinctrl_info->fem_sel_gpio);
+	} else {
+		pinctrl_info->fem_sel_gpio = -EINVAL;
+		cnss_pr_err("FEM selection GPIO is not available %d\n", pinctrl_info->fem_sel_gpio);
+	}
+#endif
+
 	if (of_find_property(dev->of_node, SW_CTRL_GPIO, NULL)) {
 		pinctrl_info->sw_ctrl_gpio = of_get_named_gpio(dev->of_node,
 							       SW_CTRL_GPIO,
@@ -803,6 +823,41 @@ int cnss_get_pinctrl(struct cnss_plat_data *plat_priv)
 out:
 	return ret;
 }
+
+#ifdef CONFIG_WLAN_MULTIPLE_SUPPORT_FEM
+/*
+if FEM is NXP, return 1
+if FEM is Qorvo, return 0
+*/
+int cnss_get_fem_sel_gpio_status(struct cnss_plat_data *plat_priv)
+{
+	int ret = 0;
+	int fem_sel_gpio = 0;
+
+	fem_sel_gpio = plat_priv->pinctrl_info.fem_sel_gpio;
+
+	if (fem_sel_gpio < 0) {
+		cnss_pr_err("FEM selection GPIO is not available %d", fem_sel_gpio);
+		return -EINVAL;
+	}
+
+	ret = gpio_direction_input(fem_sel_gpio);
+	if (ret) {
+		cnss_pr_err("Failed to set direction of the GPIO, err %d", ret);
+		return -EINVAL;
+	}
+
+	ret = gpio_get_value(fem_sel_gpio);
+	if (ret == 1)
+		cnss_pr_err("fem_sel_gpio is High! NXP FEM %d", ret);
+	else if (ret == 0)
+		cnss_pr_err("fem_sel_gpio is Low! Qorvo FEM %d", ret);
+	else
+		cnss_pr_err("Invalid fem_sel_gpio %d", ret);
+
+	return ret;
+}
+#endif
 
 #define CNSS_XO_CLK_RETRY_COUNT_MAX 5
 static void cnss_set_xo_clk_gpio_state(struct cnss_plat_data *plat_priv,

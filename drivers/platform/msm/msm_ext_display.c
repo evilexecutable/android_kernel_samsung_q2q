@@ -17,6 +17,14 @@
 #include <linux/msm_ext_display.h>
 #include <linux/extcon-provider.h>
 
+#if defined(CONFIG_SEC_DISPLAYPORT) && IS_ENABLED(CONFIG_ANDROID_SWITCH)
+#include <linux/switch.h>
+
+static struct switch_dev switch_secdp_audio = {
+	.name = "ch_hdmi_audio",
+};
+#endif
+
 struct msm_ext_disp_list {
 	struct msm_ext_disp_init_data *data;
 	struct list_head list;
@@ -172,6 +180,10 @@ end:
 	return ret;
 }
 
+#if defined(CONFIG_SEC_DISPLAYPORT) && IS_ENABLED(CONFIG_ANDROID_SWITCH)
+extern int secdp_get_audio_ch(void);
+#endif
+
 static int msm_ext_disp_process_audio(struct msm_ext_disp *ext_disp,
 		struct msm_ext_disp_codec_id *codec,
 		enum msm_ext_disp_cable_state new_state)
@@ -185,6 +197,8 @@ static int msm_ext_disp_process_audio(struct msm_ext_disp *ext_disp,
 		ret = -EPERM;
 		goto end;
 	}
+
+	pr_debug("++, new_state:%d\n", new_state);
 
 	audio_sdev = ext_disp->audio_sdev[codec->stream_id];
 
@@ -201,6 +215,15 @@ static int msm_ext_disp_process_audio(struct msm_ext_disp *ext_disp,
 		pr_err("Failed to set state. Error = %d\n", ret);
 	else
 		pr_debug("state changed to %d\n", new_state);
+
+#if defined(CONFIG_SEC_DISPLAYPORT) && IS_ENABLED(CONFIG_ANDROID_SWITCH)
+{
+	int audio_ch = new_state ? secdp_get_audio_ch() : -1;
+
+	switch_set_state(&switch_secdp_audio, audio_ch);
+	pr_info("secdp audio state : 0x%02x(%d)\n", audio_ch, audio_ch);
+}
+#endif
 
 end:
 	return ret;
@@ -255,7 +278,7 @@ static int msm_ext_disp_update_audio_ops(struct msm_ext_disp *ext_disp,
 
 	ret = msm_ext_disp_get_intf_data(ext_disp, codec, &data);
 	if (ret || !data) {
-		pr_err("Display not found (%s) ctld (%d) stream (%d)\n",
+		pr_debug("Display not found (%s) ctld (%d) stream (%d)\n",
 			msm_ext_disp_name(codec->type),
 			codec->ctrl_id, codec->stream_id);
 		goto end;
@@ -286,6 +309,8 @@ static int msm_ext_disp_audio_config(struct platform_device *pdev,
 		ret = PTR_ERR(ext_disp);
 		goto end;
 	}
+
+	pr_debug("++, state:%d\n", state);
 
 	if (state == EXT_DISPLAY_CABLE_CONNECT) {
 		ret = msm_ext_disp_select_audio_codec(pdev, codec);
@@ -505,6 +530,8 @@ int msm_ext_disp_register_intf(struct platform_device *pdev,
 		return -EINVAL;
 	}
 
+	pr_debug("++\n");
+
 	ext_disp = container_of(ext_disp_data, struct msm_ext_disp,
 				ext_disp_data);
 
@@ -621,6 +648,14 @@ static int msm_ext_disp_probe(struct platform_device *pdev)
 		pr_debug("%s: Added child devices.\n", __func__);
 	}
 
+#if defined(CONFIG_SEC_DISPLAYPORT) && IS_ENABLED(CONFIG_ANDROID_SWITCH)
+	ret = switch_dev_register(&switch_secdp_audio);
+	if (ret) {
+		pr_info("Failed to register secdp_audio switch(%d)\n", ret);
+		goto child_node_failure;
+	}
+#endif
+
 	mutex_init(&ext_disp->lock);
 
 	INIT_LIST_HEAD(&ext_disp->display_list);
@@ -656,6 +691,10 @@ static int msm_ext_disp_remove(struct platform_device *pdev)
 		ret = -ENODEV;
 		goto end;
 	}
+
+#if defined(CONFIG_SEC_DISPLAYPORT) && IS_ENABLED(CONFIG_ANDROID_SWITCH)
+	switch_dev_unregister(&switch_secdp_audio);
+#endif
 
 	ext_disp = container_of(ext_disp_data, struct msm_ext_disp,
 				ext_disp_data);

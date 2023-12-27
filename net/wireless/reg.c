@@ -3952,9 +3952,19 @@ void regulatory_propagate_dfs_state(struct wiphy *wiphy,
 	}
 }
 
+#ifdef CONFIG_BATTERY_SAMSUNG
+extern unsigned int lpcharge;
+#endif
 static int __init regulatory_init_db(void)
 {
 	int err;
+
+#ifdef CONFIG_BATTERY_SAMSUNG
+	if (lpcharge) {
+		pr_info("%s: skip regulatory_init_db due to lpm mode.\n", __func__);
+		return 0;
+	}
+#endif
 
 	/*
 	 * It's possible that - due to other bugs/issues - cfg80211
@@ -4002,6 +4012,14 @@ late_initcall(regulatory_init_db);
 
 int __init regulatory_init(void)
 {
+
+#ifdef CONFIG_BATTERY_SAMSUNG
+	if (lpcharge) {
+		pr_info("%s: skip regulatory_init_db due to lpm mode.\n", __func__);
+		return 0;
+	}
+#endif
+
 	reg_pdev = platform_device_register_simple("regulatory", 0, NULL, 0);
 	if (IS_ERR(reg_pdev))
 		return PTR_ERR(reg_pdev);
