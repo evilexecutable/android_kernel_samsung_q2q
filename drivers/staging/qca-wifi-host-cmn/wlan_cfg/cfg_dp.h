@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -63,8 +63,13 @@
 #define WLAN_CFG_TX_RING_SIZE 1024
 #endif
 
+#define WLAN_CFG_IPA_TX_RING_SIZE_MIN 1024
 #define WLAN_CFG_IPA_TX_RING_SIZE 1024
+#define WLAN_CFG_IPA_TX_RING_SIZE_MAX 8096
+
+#define WLAN_CFG_IPA_TX_COMP_RING_SIZE_MIN 1024
 #define WLAN_CFG_IPA_TX_COMP_RING_SIZE 1024
+#define WLAN_CFG_IPA_TX_COMP_RING_SIZE_MAX 8096
 
 #define WLAN_CFG_PER_PDEV_TX_RING 0
 #define WLAN_CFG_IPA_UC_TX_BUF_SIZE 2048
@@ -111,13 +116,21 @@
 #endif
 #endif
 
-#define WLAN_CFG_RX_PENDING_HL_THRESHOLD 0x60000
-#define WLAN_CFG_RX_PENDING_HL_THRESHOLD_MIN 0
-#define WLAN_CFG_RX_PENDING_HL_THRESHOLD_MAX 0x80000
+#ifdef NBUF_MEMORY_DEBUG
+#define WLAN_CFG_RX_PENDING_THRESHOLD_DEFAULT 0xFFFF
+#else
+#define WLAN_CFG_RX_PENDING_THRESHOLD_DEFAULT 0x1FFFF
+#endif
 
-#define WLAN_CFG_RX_PENDING_LO_THRESHOLD 0x60000
+#define WLAN_CFG_RX_PENDING_HL_THRESHOLD \
+		WLAN_CFG_RX_PENDING_THRESHOLD_DEFAULT
+#define WLAN_CFG_RX_PENDING_HL_THRESHOLD_MIN 0
+#define WLAN_CFG_RX_PENDING_HL_THRESHOLD_MAX 0x200000
+
+#define WLAN_CFG_RX_PENDING_LO_THRESHOLD \
+		WLAN_CFG_RX_PENDING_THRESHOLD_DEFAULT
 #define WLAN_CFG_RX_PENDING_LO_THRESHOLD_MIN 100
-#define WLAN_CFG_RX_PENDING_LO_THRESHOLD_MAX 0x80000
+#define WLAN_CFG_RX_PENDING_LO_THRESHOLD_MAX 0x200000
 
 #define WLAN_CFG_INT_TIMER_THRESHOLD_WBM_RELEASE_RING 256
 #define WLAN_CFG_INT_TIMER_THRESHOLD_REO_RING 512
@@ -974,6 +987,10 @@
 	CFG_INI_BOOL("dp_rx_buff_prealloc_pool", false, \
 		     "Enable/Disable DP RX emergency buffer pool support")
 
+#define CFG_DP_RX_REFILL_BUFF_POOL_ENABLE \
+	CFG_INI_BOOL("dp_rx_refill_buff_pool", false, \
+		     "Enable/Disable DP RX refill buffer pool support")
+
 #define CFG_DP_POLL_MODE_ENABLE \
 		CFG_INI_BOOL("dp_poll_mode_enable", false, \
 		"Enable/Disable Polling mode for data path")
@@ -1018,35 +1035,80 @@
 		false, \
 		"enable rx frame pending check in WoW mode")
 
-#define WLAN_CFG_SEND_ALL_ICMP_REQ_TO_FW (-1)
-#define WLAN_CFG_SEND_ICMP_REQ_TO_FW 0
-#define WLAN_CFG_SEND_ICMP_REQ_TO_FW_MIN (-1)
-#define WLAN_CFG_SEND_ICMP_REQ_TO_FW_MAX 100000
-
 /*
  * <ini>
- * send_icmp_pkt_to_fw - Send ICMP Request packet to FW.
- * @Min: -1
- * @Max:  100000
+ * gForceRX64BA - enable force 64 blockack mode for RX
+ * @Min: 0
+ * @Max: 1
  * @Default: 0
  *
- * This ini is used to control DP Software to send ICMP request packets to FW
- * at certain interval (in milliseconds).
- * The value 0 is used to disable sending the ICMP requests to FW.
- * The value -1 is used to send all ICMP requests to FW.
- * Any value greater than zero indicates the time interval (in milliseconds)
- * at which ICMP requests should be sent to FW.
+ * This ini is used to control DP Software to use 64 blockack
+ * for RX direction forcibly
  *
- * Usage: External
+ * Usage: Internal
  *
  * </ini>
  */
-#define CFG_DP_SEND_ICMP_REQ_TO_FW \
-	CFG_INI_INT("send_icmp_req_to_fw", \
-		    WLAN_CFG_SEND_ICMP_REQ_TO_FW_MIN, \
-		    WLAN_CFG_SEND_ICMP_REQ_TO_FW_MAX, \
-		    WLAN_CFG_SEND_ICMP_REQ_TO_FW, \
-		    CFG_VALUE_OR_DEFAULT, "Send ICMP Request packets to FW")
+#define CFG_FORCE_RX_64_BA \
+		CFG_INI_BOOL("gForceRX64BA", \
+		false, "Enable/Disable force 64 blockack in RX side")
+
+#ifdef IPA_OFFLOAD
+/*
+ * <ini>
+ * dp_ipa_tx_ring_size - Set tcl ring size for IPA
+ * @Min: 1024
+ * @Max: 8096
+ * @Default: 1024
+ *
+ * This ini sets the tcl ring size for IPA
+ *
+ * Related: N/A
+ *
+ * Supported Feature: IPA
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_DP_IPA_TX_RING_SIZE \
+		CFG_INI_UINT("dp_ipa_tx_ring_size", \
+		WLAN_CFG_IPA_TX_RING_SIZE_MIN, \
+		WLAN_CFG_IPA_TX_RING_SIZE_MAX, \
+		WLAN_CFG_IPA_TX_RING_SIZE, \
+		CFG_VALUE_OR_DEFAULT, "IPA TCL ring size")
+
+/*
+ * <ini>
+ * dp_ipa_tx_comp_ring_size - Set tx comp ring size for IPA
+ * @Min: 1024
+ * @Max: 8096
+ * @Default: 1024
+ *
+ * This ini sets the tx comp ring size for IPA
+ *
+ * Related: N/A
+ *
+ * Supported Feature: IPA
+ *
+ * Usage: Internal
+ *
+ * </ini>
+ */
+#define CFG_DP_IPA_TX_COMP_RING_SIZE \
+		CFG_INI_UINT("dp_ipa_tx_comp_ring_size", \
+		WLAN_CFG_IPA_TX_COMP_RING_SIZE_MIN, \
+		WLAN_CFG_IPA_TX_COMP_RING_SIZE_MAX, \
+		WLAN_CFG_IPA_TX_COMP_RING_SIZE, \
+		CFG_VALUE_OR_DEFAULT, "IPA tx comp ring size")
+
+#define CFG_DP_IPA_TX_RING_CFG \
+		CFG(CFG_DP_IPA_TX_RING_SIZE) \
+		CFG(CFG_DP_IPA_TX_COMP_RING_SIZE)
+#else
+#define CFG_DP_IPA_TX_RING_CFG
+#endif
+
 
 #define CFG_DP \
 		CFG(CFG_DP_HTT_PACKET_TYPE) \
@@ -1128,6 +1190,7 @@
 		CFG(CFG_DP_REO_RINGS_MAP) \
 		CFG(CFG_DP_PEER_EXT_STATS) \
 		CFG(CFG_DP_RX_BUFF_POOL_ENABLE) \
+		CFG(CFG_DP_RX_REFILL_BUFF_POOL_ENABLE) \
 		CFG(CFG_DP_RX_PENDING_HL_THRESHOLD) \
 		CFG(CFG_DP_RX_PENDING_LO_THRESHOLD) \
 		CFG(CFG_DP_LEGACY_MODE_CSUM_DISABLE) \
@@ -1136,5 +1199,6 @@
 		CFG(CFG_DP_TX_PER_PKT_VDEV_ID_CHECK) \
 		CFG(CFG_DP_RX_FST_IN_CMEM) \
 		CFG(CFG_DP_WOW_CHECK_RX_PENDING) \
-		CFG(CFG_DP_SEND_ICMP_REQ_TO_FW)
+		CFG(CFG_FORCE_RX_64_BA) \
+		CFG_DP_IPA_TX_RING_CFG
 #endif /* _CFG_DP_H_ */

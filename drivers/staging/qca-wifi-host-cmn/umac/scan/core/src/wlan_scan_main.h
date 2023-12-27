@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -253,6 +253,7 @@ struct scan_vdev_obj {
  * @pno_wake_lock: pno wake lock
  * @pno_cb: callback to call on PNO completion
  * @mawc_params: Configuration parameters for NLO MAWC.
+ * @user_config_sched_scan_plan: if enabled set user confing sched scan plan
  */
 struct pno_def_config {
 	bool pno_offload_enabled;
@@ -271,6 +272,7 @@ struct pno_def_config {
 	qdf_wake_lock_t pno_wake_lock;
 	struct cb_handler pno_cb;
 	struct nlo_mawc_params mawc_params;
+	bool user_config_sched_scan_plan;
 };
 #endif
 
@@ -300,8 +302,11 @@ struct extscan_def_config {
  * @skip_dfs_chan_in_p2p_search: Skip DFS channels in p2p search.
  * @use_wake_lock_in_user_scan: if wake lock will be acquired during user scan
  * @active_dwell_2g: default active dwell time for 2G channels, if it's not zero
+ * @min_dwell_time_6g: default min dwell time for 6G channels
  * @active_dwell_6g: default active dwell time for 6G channels
  * @passive_dwell_6g: default passive dwell time for 6G channels
+ * @active_dwell_time_6g_conc: default concurrent active dwell time for 6G
+ * @passive_dwell_time_6g_conc: default concurrent passive dwell time for 6G
  * @passive_dwell:default passive dwell time
  * @max_rest_time: default max rest time
  * @sta_miracast_mcc_rest_time: max rest time for miracast and mcc
@@ -327,6 +332,9 @@ struct extscan_def_config {
  * @max_active_scans_allowed: maximum number of active parallel scan allowed
  *                            per psoc
  * @scan_mode_6g: scan mode in 6Ghz
+ * @duty_cycle_6ghz: Enable optimization on 6g channels for every full scan
+ *                   except the duty cycle. So that every nth scan(depending on
+ *                   duty cycle) is a full scan and rest are all optimized scans
  * @enable_connected_scan: enable scans after connection
  * @scan_priority: default scan priority
  * @adaptive_dwell_time_mode: adaptive dwell mode with connection
@@ -384,8 +392,11 @@ struct scan_default_params {
 	bool skip_dfs_chan_in_p2p_search;
 	bool use_wake_lock_in_user_scan;
 	uint32_t active_dwell_2g;
+	uint32_t min_dwell_time_6g;
 	uint32_t active_dwell_6g;
 	uint32_t passive_dwell_6g;
+	uint32_t active_dwell_time_6g_conc;
+	uint32_t passive_dwell_time_6g_conc;
 	uint32_t passive_dwell;
 	uint32_t max_rest_time;
 	uint32_t sta_miracast_mcc_rest_time;
@@ -414,6 +425,7 @@ struct scan_default_params {
 	uint8_t go_scan_burst_duration;
 	uint8_t ap_scan_burst_duration;
 	enum scan_mode_6ghz scan_mode_6g;
+	uint8_t duty_cycle_6ghz;
 	bool enable_connected_scan;
 	enum scan_priority scan_priority;
 	enum scan_dwelltime_adaptive_mode adaptive_dwell_time_mode;
@@ -506,6 +518,11 @@ struct scan_cb {
  * @scan_start_request_buff: buffer used to pass
  *      scan config to event handlers
  * @rnr_channel_db: RNR channel list database
+ * @duty_cycle_cnt_6ghz: Scan count to track the full scans and decide whether
+ *                        to optimizate 6g channels in the scan request based
+ *                        on the ini scan_mode_6ghz_duty_cycle.
+ * @allow_bss_with_incomplete_ie: Continue scan entry even if any corrupted IES are
+ *			    present.
  */
 struct wlan_scan_obj {
 	uint32_t scan_disabled;
@@ -539,6 +556,8 @@ struct wlan_scan_obj {
 	uint64_t scm_scan_event_duration;
 	uint64_t scm_scan_to_post_scan_duration;
 #endif
+	uint16_t duty_cycle_cnt_6ghz;
+	bool allow_bss_with_incomplete_ie;
 };
 
 #ifdef ENABLE_SCAN_PROFILE

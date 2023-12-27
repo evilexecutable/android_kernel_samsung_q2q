@@ -186,12 +186,14 @@ enum hal_rx_msdu_desc_flags {
  *                      [2] AMPDU flag
  *			[3] raw_ampdu
  * @peer_meta_data:	Upper bits containing peer id, vdev id
+ * @bar_frame: indicates if received frame is a bar frame
  */
 struct hal_rx_mpdu_desc_info {
 	uint16_t msdu_count;
 	uint16_t mpdu_seq; /* 12 bits for length */
 	uint32_t mpdu_flags;
 	uint32_t peer_meta_data; /* sw progamed meta-data:MAC Id & peer Id */
+	uint16_t bar_frame;
 };
 
 /**
@@ -284,6 +286,14 @@ enum hal_rx_ret_buf_manager {
 		((*(((unsigned int *)buff_addr_info) + \
 		(BUFFER_ADDR_INFO_1_SW_BUFFER_COOKIE_OFFSET >> 2))) |= \
 		HAL_RX_COOKIE_INVALID_MASK)
+
+/*
+ * macro to reset the invalid bit for sw cookie
+ */
+#define HAL_RX_BUF_COOKIE_INVALID_RESET(buff_addr_info) \
+		((*(((unsigned int *)buff_addr_info) + \
+		(BUFFER_ADDR_INFO_1_SW_BUFFER_COOKIE_OFFSET >> 2))) &= \
+		~HAL_RX_COOKIE_INVALID_MASK)
 
 /*
  * macro to set the cookie into the rxdma ring entry
@@ -388,6 +398,11 @@ enum hal_rx_ret_buf_manager {
 	(((struct reo_destination_ring *)	\
 		reo_desc)->buf_or_link_desc_addr_info)))
 
+#define HAL_RX_REO_BUF_COOKIE_INVALID_RESET(reo_desc)	\
+		(HAL_RX_BUF_COOKIE_INVALID_RESET(&		\
+		(((struct reo_destination_ring *)	\
+			reo_desc)->buf_or_link_desc_addr_info)))
+
 #define HAL_RX_MPDU_SEQUENCE_NUMBER_GET(mpdu_info_ptr)	\
 	((mpdu_info_ptr					\
 	[RX_MPDU_DESC_INFO_0_MPDU_SEQUENCE_NUMBER_OFFSET >> 2] & \
@@ -426,6 +441,11 @@ enum hal_rx_ret_buf_manager {
 	HAL_RX_MPDU_RETRY_BIT_GET(mpdu_info_ptr) |	\
 	HAL_RX_MPDU_AMPDU_FLAG_GET(mpdu_info_ptr) |	\
 	HAL_RX_MPDU_RAW_MPDU_GET(mpdu_info_ptr))
+
+#define HAL_RX_MPDU_BAR_FRAME_GET(mpdu_info_ptr) \
+	((mpdu_info_ptr[RX_MPDU_DESC_INFO_0_BAR_FRAME_OFFSET >> 2] & \
+	RX_MPDU_DESC_INFO_0_BAR_FRAME_MASK) >> \
+	RX_MPDU_DESC_INFO_0_BAR_FRAME_LSB)
 
 
 #define HAL_RX_MSDU_PKT_LENGTH_GET(msdu_info_ptr)		\
@@ -558,6 +578,7 @@ static inline void hal_rx_mpdu_desc_info_get(void *desc_addr,
 	mpdu_desc_info->mpdu_flags = HAL_RX_MPDU_FLAGS_GET(mpdu_info);
 	mpdu_desc_info->peer_meta_data =
 		HAL_RX_MPDU_DESC_PEER_META_DATA_GET(mpdu_info);
+	mpdu_desc_info->bar_frame = HAL_RX_MPDU_BAR_FRAME_GET(mpdu_info);
 }
 
 /*
@@ -4013,5 +4034,27 @@ uint32_t hal_rx_attn_offset_get(hal_soc_handle_t hal_soc_hdl)
 	}
 
 	return hal_soc->ops->hal_rx_attn_offset_get();
+}
+
+#define HAL_RX_ATTN_MSDU_LEN_ERR_GET(_rx_attn)		\
+	(_HAL_MS((*_OFFSET_TO_WORD_PTR(_rx_attn,	\
+		RX_ATTENTION_1_MSDU_LENGTH_ERR_OFFSET)),	\
+		RX_ATTENTION_1_MSDU_LENGTH_ERR_MASK,		\
+		RX_ATTENTION_1_MSDU_LENGTH_ERR_LSB))
+
+/**
+ * hal_rx_attn_msdu_len_err_get(): Get msdu_len_err value from
+ *  rx attention tlvs
+ * @buf: pointer to rx pkt tlvs hdr
+ *
+ * Return: msdu_len_err value
+ */
+static inline uint32_t
+hal_rx_attn_msdu_len_err_get(uint8_t *buf)
+{
+	struct rx_pkt_tlvs *pkt_tlvs = (struct rx_pkt_tlvs *)buf;
+	struct rx_attention *rx_attn = &pkt_tlvs->attn_tlv.rx_attn;
+
+	return HAL_RX_ATTN_MSDU_LEN_ERR_GET(rx_attn);
 }
 #endif /* _HAL_RX_H */

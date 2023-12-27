@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -73,10 +73,12 @@
 #include <wlan_tdls_cfg_api.h>
 #include "cfg_ucfg_api.h"
 #include "wlan_mlme_public_struct.h"
+#include "wlan_mlme_twt_api.h"
 #include "wlan_scan_utils_api.h"
 #include <qdf_hang_event_notifier.h>
 #include <qdf_notifier.h>
 #include "wlan_pkt_capture_ucfg_api.h"
+#include "wlan_crypto_def_i.h"
 
 struct pe_hang_event_fixed_param {
 	uint16_t tlv_header;
@@ -747,6 +749,19 @@ static QDF_STATUS lim_unregister_sap_bcn_callback(struct mac_context *mac_ctx)
 	return status;
 }
 
+static void lim_register_policy_mgr_callback(struct wlan_objmgr_psoc *psoc)
+{
+	struct policy_mgr_conc_cbacks conc_cbacks;
+
+	qdf_mem_zero(&conc_cbacks, sizeof(conc_cbacks));
+	conc_cbacks.connection_info_update = lim_send_conc_params_update;
+
+	if (QDF_STATUS_SUCCESS != policy_mgr_register_conc_cb(psoc,
+							      &conc_cbacks)) {
+		pe_err("failed to register policy manager callbacks");
+	}
+}
+
 static int pe_hang_event_notifier_call(struct notifier_block *block,
 				       unsigned long state,
 				       void *data)
@@ -759,6 +774,7 @@ static int pe_hang_event_notifier_call(struct notifier_block *block,
 	uint8_t *pe_data;
 	uint8_t i;
 	struct pe_hang_event_fixed_param *cmd;
+	size_t size;
 
 	if (!data)
 		return NOTIFY_STOP_MASK;
@@ -767,13 +783,13 @@ static int pe_hang_event_notifier_call(struct notifier_block *block,
 	if (!mac)
 		return NOTIFY_STOP_MASK;
 
-	if (pe_hang_data->offset >= QDF_WLAN_MAX_HOST_OFFSET)
-		return NOTIFY_STOP_MASK;
-
+	size = sizeof(*cmd);
 	for (i = 0; i < mac->lim.maxBssId; i++) {
 		session = &mac->lim.gpSession[i];
 		if (!session->valid)
 			continue;
+		if (pe_hang_data->offset + size > QDF_WLAN_HANG_FW_OFFSET)
+			return NOTIFY_STOP_MASK;
 
 		pe_data = (pe_hang_data->hang_data + pe_hang_data->offset);
 		cmd = (struct pe_hang_event_fixed_param *)pe_data;
@@ -784,7 +800,7 @@ static int pe_hang_event_notifier_call(struct notifier_block *block,
 		cmd->limprevmlmstate = session->limPrevMlmState;
 		cmd->limsmestate = session->limSmeState;
 		cmd->limprevsmestate = session->limPrevSmeState;
-		pe_hang_data->offset += sizeof(*cmd);
+		pe_hang_data->offset += size;
 	}
 
 	return NOTIFY_OK;
@@ -859,6 +875,8 @@ QDF_STATUS pe_open(struct mac_context *mac, struct cds_config_info *cds_cfg)
 	lim_nan_register_callbacks(mac);
 	p2p_register_callbacks(mac);
 	lim_register_sap_bcn_callback(mac);
+	if (mac->mlme_cfg->edca_params.enable_edca_params)
+		lim_register_policy_mgr_callback(mac->psoc);
 
 	if (!QDF_IS_STATUS_SUCCESS(
 	    cds_shutdown_notifier_register(pe_shutdown_notifier_cb, mac))) {
@@ -1209,7 +1227,7 @@ static QDF_STATUS pe_handle_mgmt_frame(struct wlan_objmgr_psoc *psoc,
 	int ret;
 
 	/* skip offload packets */
-	if (ucfg_pkt_capture_get_mode(psoc) &&
+	if ((ucfg_pkt_capture_get_mode(psoc) != PACKET_CAPTURE_MODE_DISABLE) &&
 	    mgmt_rx_params->status & WMI_RX_OFFLOAD_MON_MODE) {
 		qdf_nbuf_free(buf);
 		return QDF_STATUS_SUCCESS;
@@ -1230,7 +1248,7 @@ static QDF_STATUS pe_handle_mgmt_frame(struct wlan_objmgr_psoc *psoc,
 
 	ret = wma_form_rx_packet(buf, mgmt_rx_params, pVosPkt);
 	if (ret) {
-		pe_err_rl("Failed to fill cds packet from event buffer");
+		pe_debug_rl("Failed to fill cds packet from event buffer");
 		return QDF_STATUS_E_FAILURE;
 	}
 
@@ -1788,6 +1806,7 @@ static void pe_set_rmf_caps(struct mac_context *mac_ctx,
 	tDot11fReAssocRequest *assoc_req;
 	uint32_t status;
 	tSirMacRsnInfo rsn_ie;
+	uint32_t value = WPA_TYPE_OUI;
 
 	assoc_body = (uint8_t *)roam_synch + roam_synch->reassoc_req_offset +
 			sizeof(tSirMacMgmtHdr);
@@ -1812,16 +1831,31 @@ static void pe_set_rmf_caps(struct mac_context *mac_ctx,
 			 status, len);
 	}
 	ft_session->limRmfEnabled = false;
-	if (!assoc_req->RSNOpaque.present) {
+	if (!assoc_req->RSNOpaque.present && !assoc_req->WPAOpaque.present) {
 		qdf_mem_free(assoc_req);
 		return;
 	}
-	rsn_ie.info[0] = WLAN_ELEMID_RSN;
-	rsn_ie.info[1] = assoc_req->RSNOpaque.num_data;
 
-	rsn_ie.length = assoc_req->RSNOpaque.num_data + 2;
-	qdf_mem_copy(&rsn_ie.info[2], assoc_req->RSNOpaque.data,
-		     assoc_req->RSNOpaque.num_data);
+	if (assoc_req->RSNOpaque.present) {
+		rsn_ie.info[0] = WLAN_ELEMID_RSN;
+		rsn_ie.info[1] = assoc_req->RSNOpaque.num_data;
+
+		rsn_ie.length = assoc_req->RSNOpaque.num_data + 2;
+		qdf_mem_copy(&rsn_ie.info[2], assoc_req->RSNOpaque.data,
+			     assoc_req->RSNOpaque.num_data);
+	} else if (assoc_req->WPAOpaque.present) {
+		rsn_ie.info[0] = WLAN_ELEMID_VENDOR;
+		rsn_ie.info[1] = WLAN_OUI_SIZE + assoc_req->WPAOpaque.num_data;
+
+		rsn_ie.length = WLAN_OUI_SIZE +
+				assoc_req->WPAOpaque.num_data + 2;
+
+		qdf_mem_copy(&rsn_ie.info[2], (uint8_t *)&value, WLAN_OUI_SIZE);
+		qdf_mem_copy(&rsn_ie.info[WLAN_OUI_SIZE + 2],
+			     assoc_req->WPAOpaque.data,
+			     assoc_req->WPAOpaque.num_data);
+	}
+
 	qdf_mem_free(assoc_req);
 	wlan_set_vdev_crypto_prarams_from_ie(ft_session->vdev, rsn_ie.info,
 					     rsn_ie.length);
@@ -2099,11 +2133,14 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 		qdf_mem_free(parsed_frm_ptr);
 		return QDF_STATUS_E_FAILURE;
 	}
-	pe_debug("LFR3:Beacon/Prb Rsp: %d bssid "QDF_MAC_ADDR_FMT" beacon "QDF_MAC_ADDR_FMT,
+	pe_debug("LFR3:Beacon/Prb Rsp: %d len %d bssid "QDF_MAC_ADDR_FMT" beacon "QDF_MAC_ADDR_FMT,
 		 roam_synch_ind_ptr->isBeacon,
+		 roam_synch_ind_ptr->beaconProbeRespLength,
 		 QDF_MAC_ADDR_REF(roam_synch_ind_ptr->bssid.bytes),
 		 QDF_MAC_ADDR_REF(mac_hdr->bssId));
-
+	QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_DEBUG,
+			   bcn_proberesp_ptr,
+			   roam_synch_ind_ptr->beaconProbeRespLength);
 	status = lim_roam_gen_beacon_descr(mac,
 					   roam_synch_ind_ptr,
 					   parsed_frm_ptr,
@@ -2131,6 +2168,7 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 				sizeof(bss_desc_ptr->length) + ie_len);
 
 	bss_desc_ptr->fProbeRsp = !roam_synch_ind_ptr->isBeacon;
+	bss_desc_ptr->rssi = roam_synch_ind_ptr->rssi;
 	/* Copy Timestamp */
 	bss_desc_ptr->scansystimensec = qdf_get_monotonic_boottime_ns();
 	if (parsed_frm_ptr->he_op.oper_info_6g_present) {
@@ -2167,6 +2205,11 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 	qdf_mem_copy((uint8_t *) &bss_desc_ptr->bssId,
 		     (uint8_t *)roam_synch_ind_ptr->bssid.bytes,
 		     sizeof(tSirMacAddr));
+
+	qdf_mem_copy((uint8_t *)&bss_desc_ptr->seq_ctrl,
+		     (uint8_t *)&mac_hdr->seqControl,
+		     sizeof(tSirMacSeqCtl));
+
 	bss_desc_ptr->received_time =
 		      (uint64_t)qdf_mc_timer_get_system_time();
 	if (parsed_frm_ptr->mdiePresent) {
@@ -2175,15 +2218,21 @@ lim_roam_fill_bss_descr(struct mac_context *mac,
 				(uint8_t *)parsed_frm_ptr->mdie,
 				SIR_MDIE_SIZE);
 	}
-	pe_debug("chan: %d rssi: %d ie_len %d",
+	pe_debug("chan: %d rssi: %d desc len %d",
 		 bss_desc_ptr->chan_freq,
-		 bss_desc_ptr->rssi, ie_len);
+		 bss_desc_ptr->rssi,
+		 bss_desc_ptr->length);
+
+	qdf_mem_free(parsed_frm_ptr);
 	if (ie_len) {
 		qdf_mem_copy(&bss_desc_ptr->ieFields,
 			     ie, ie_len);
 		qdf_mem_free(ie);
+	} else {
+		pe_err("Beacon/Probe rsp doesn't have any IEs");
+		return QDF_STATUS_E_FAILURE;
 	}
-	qdf_mem_free(parsed_frm_ptr);
+
 	return QDF_STATUS_SUCCESS;
 }
 
@@ -2400,6 +2449,55 @@ lim_fill_fils_ft(struct pe_session *src_session,
 {}
 #endif
 
+#ifdef WLAN_SUPPORT_TWT
+void
+lim_fill_roamed_peer_twt_caps(struct mac_context *mac_ctx,
+			      uint8_t vdev_id,
+			      struct roam_offload_synch_ind *roam_synch)
+{
+	uint8_t *reassoc_body;
+	uint16_t len;
+	uint32_t status;
+	tDot11fReAssocResponse *reassoc_rsp;
+	struct pe_session *pe_session;
+
+	pe_session = pe_find_session_by_vdev_id(mac_ctx, vdev_id);
+	if (!pe_session) {
+		pe_err("session not found for given vdev_id %d", vdev_id);
+		return;
+	}
+
+	reassoc_rsp = qdf_mem_malloc(sizeof(*reassoc_rsp));
+	if (!reassoc_rsp)
+		return;
+
+	len = roam_synch->reassocRespLength - sizeof(tSirMacMgmtHdr);
+	reassoc_body = (uint8_t *)roam_synch + sizeof(tSirMacMgmtHdr) +
+			roam_synch->reassocRespOffset;
+
+	status = dot11f_unpack_re_assoc_response(mac_ctx, reassoc_body, len,
+						 reassoc_rsp, false);
+	if (DOT11F_FAILED(status)) {
+		pe_err("Failed to parse a Re-association Rsp (0x%08x, %d bytes):",
+		       status, len);
+		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_INFO,
+				   reassoc_body, len);
+		qdf_mem_free(reassoc_rsp);
+		return;
+	} else if (DOT11F_WARNED(status)) {
+		pe_debug("Warnings while unpacking a Re-association Rsp (0x%08x, %d bytes):",
+			 status, len);
+	}
+
+	if (lim_is_session_he_capable(pe_session))
+		mlme_set_twt_peer_capabilities(mac_ctx->psoc,
+					       &roam_synch->bssid,
+					       &reassoc_rsp->he_cap,
+					       &reassoc_rsp->he_op);
+	qdf_mem_free(reassoc_rsp);
+}
+#endif
+
 /**
  * lim_check_ft_initial_im_association() - To check FT initial mobility(im)
  * association
@@ -2553,7 +2651,7 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 		return status;
 	}
 	session_ptr->limSmeState = eLIM_SME_IDLE_STATE;
-	lim_cleanup_rx_path(mac_ctx, curr_sta_ds, session_ptr);
+	lim_cleanup_rx_path(mac_ctx, curr_sta_ds, session_ptr, false);
 	lim_delete_dph_hash_entry(mac_ctx, curr_sta_ds->staAddr, aid,
 				  session_ptr);
 	pe_delete_session(mac_ctx, session_ptr);
@@ -2865,7 +2963,7 @@ void lim_mon_deinit_session(struct mac_context *mac_ptr,
 {
 	struct pe_session *session;
 
-	session = pe_find_session_by_session_id(mac_ptr, msg->vdev_id);
+	session = pe_find_session_by_vdev_id(mac_ptr, msg->vdev_id);
 
 	if (session && session->bssType == eSIR_MONITOR_MODE)
 		pe_delete_session(mac_ptr, session);

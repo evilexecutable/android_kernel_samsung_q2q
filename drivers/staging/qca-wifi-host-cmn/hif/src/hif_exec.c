@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -96,7 +96,7 @@ hif_hist_skip_event_record(struct hif_event_history *hist_ev,
 					    HIF_EVENT_HIST_MAX)) {
 			last_irq_rec =
 				&hist_ev->event[hist_ev->misc.last_irq_index];
-			last_irq_rec->timestamp = qdf_get_log_timestamp();
+			last_irq_rec->timestamp = hif_get_log_timestamp();
 			last_irq_rec->cpu_id = qdf_get_cpu();
 			last_irq_rec->hp++;
 			last_irq_rec->tp = last_irq_rec->timestamp -
@@ -106,7 +106,7 @@ hif_hist_skip_event_record(struct hif_event_history *hist_ev,
 		break;
 	case HIF_EVENT_BH_SCHED:
 		if (rec->type == HIF_EVENT_BH_SCHED) {
-			rec->timestamp = qdf_get_log_timestamp();
+			rec->timestamp = hif_get_log_timestamp();
 			rec->cpu_id = qdf_get_cpu();
 			return true;
 		}
@@ -117,6 +117,11 @@ hif_hist_skip_event_record(struct hif_event_history *hist_ev,
 		break;
 	case HIF_EVENT_SRNG_ACCESS_END:
 		if (rec->type != HIF_EVENT_SRNG_ACCESS_START)
+			return true;
+		break;
+	case HIF_EVENT_BH_COMPLETE:
+	case HIF_EVENT_BH_FORCE_BREAK:
+		if (rec->type != HIF_EVENT_SRNG_ACCESS_END)
 			return true;
 		break;
 	default:
@@ -134,7 +139,7 @@ void hif_hist_record_event(struct hif_opaque_softc *hif_ctx,
 	struct hif_event_record *record;
 	int record_index;
 
-	if (scn->event_disable_mask & BIT(event->type))
+	if (!(scn->event_enable_mask & BIT(event->type)))
 		return;
 
 	if (qdf_unlikely(intr_grp_id >= HIF_NUM_INT_CONTEXTS)) {
@@ -156,14 +161,14 @@ void hif_hist_record_event(struct hif_opaque_softc *hif_ctx,
 
 	if (event->type == HIF_EVENT_IRQ_TRIGGER) {
 		hist_ev->misc.last_irq_index = record_index;
-		hist_ev->misc.last_irq_ts = qdf_get_log_timestamp();
+		hist_ev->misc.last_irq_ts = hif_get_log_timestamp();
 	}
 
 	record->hal_ring_id = event->hal_ring_id;
 	record->hp = event->hp;
 	record->tp = event->tp;
 	record->cpu_id = qdf_get_cpu();
-	record->timestamp = qdf_get_log_timestamp();
+	record->timestamp = hif_get_log_timestamp();
 	record->type = event->type;
 }
 
@@ -623,6 +628,8 @@ static int hif_exec_poll(struct napi_struct *napi, int budget)
 	actual_dones = work_done;
 
 	if (!hif_ext_group->force_break && work_done < normalized_budget) {
+		hif_record_event(hif_ext_group->hif, hif_ext_group->grp_id,
+				 0, 0, 0, HIF_EVENT_BH_COMPLETE);
 		napi_complete(napi);
 		qdf_atomic_dec(&scn->active_grp_tasklet_cnt);
 		hif_ext_group->irq_enable(hif_ext_group);
@@ -630,6 +637,8 @@ static int hif_exec_poll(struct napi_struct *napi, int budget)
 	} else {
 		/* if the ext_group supports time based yield, claim full work
 		 * done anyways */
+		hif_record_event(hif_ext_group->hif, hif_ext_group->grp_id,
+				 0, 0, 0, HIF_EVENT_BH_FORCE_BREAK);
 		work_done = normalized_budget;
 	}
 
@@ -834,6 +843,21 @@ QDF_STATUS hif_configure_ext_group_interrupts(struct hif_opaque_softc *hif_ctx)
 }
 
 qdf_export_symbol(hif_configure_ext_group_interrupts);
+
+void hif_deconfigure_ext_group_interrupts(struct hif_opaque_softc *hif_ctx)
+{
+	struct hif_softc *scn = HIF_GET_SOFTC(hif_ctx);
+
+	if (!scn || !scn->ext_grp_irq_configured) {
+		hif_err("scn(%pk) is NULL or grp irq not configured", scn);
+		return;
+	}
+
+	hif_grp_irq_deconfigure(scn);
+	scn->ext_grp_irq_configured = false;
+}
+
+qdf_export_symbol(hif_deconfigure_ext_group_interrupts);
 
 #ifdef WLAN_SUSPEND_RESUME_TEST
 /**

@@ -16,7 +16,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 /**
- * DOC: define internal APIs related to the mlme component
+ * DOC: define internal APIs related to the mlme component, legacy APIs are
+ *	called for the time being, but will be cleaned up after convergence
  */
 #include "wlan_mlme_main.h"
 #include "wlan_mlme_vdev_mgr_interface.h"
@@ -30,6 +31,7 @@
 #include "target_if_cm_roam_offload.h"
 #include "wlan_crypto_global_api.h"
 #include "target_if_wfa_testcmd.h"
+#include "csr_api.h"
 
 static struct vdev_mlme_ops sta_mlme_ops;
 static struct vdev_mlme_ops ap_mlme_ops;
@@ -1157,6 +1159,7 @@ QDF_STATUS vdevmgr_mlme_ext_hdl_create(struct vdev_mlme_obj *vdev_mlme)
 				     &vdev_mlme->mgmt.generic.subtype);
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Get vdev type failed; status:%d", status);
+		qdf_mem_free(vdev_mlme->ext_vdev_ptr);
 		return status;
 	}
 
@@ -1164,6 +1167,7 @@ QDF_STATUS vdevmgr_mlme_ext_hdl_create(struct vdev_mlme_obj *vdev_mlme)
 	if (QDF_IS_STATUS_ERROR(status)) {
 		mlme_err("Failed to create vdev for vdev id %d",
 			 wlan_vdev_get_id(vdev_mlme->vdev));
+		qdf_mem_free(vdev_mlme->ext_vdev_ptr);
 		return status;
 	}
 
@@ -1546,6 +1550,46 @@ QDF_STATUS mlme_vdev_self_peer_delete(struct scheduler_msg *self_peer_del_msg)
 	return status;
 }
 
+QDF_STATUS wlan_sap_disconnect_all_p2p_client(uint8_t vdev_id)
+{
+	return csr_mlme_vdev_disconnect_all_p2p_client_event(vdev_id);
+}
+
+QDF_STATUS wlan_sap_stop_bss(uint8_t vdev_id)
+{
+	return csr_mlme_vdev_stop_bss(vdev_id);
+}
+
+qdf_freq_t wlan_get_conc_freq(void)
+{
+	return csr_mlme_get_concurrent_operation_freq();
+}
+
+/**
+ * ap_mlme_vdev_csa_complete() - callback to initiate csa complete
+ *
+ * @vdev_mlme: vdev mlme object
+ *
+ * This function is called for csa complete indication
+ *
+ * Return: QDF_STATUS
+ */
+static QDF_STATUS ap_mlme_vdev_csa_complete(struct vdev_mlme_obj *vdev_mlme)
+
+{
+	uint8_t vdev_id;
+
+	vdev_id = wlan_vdev_get_id(vdev_mlme->vdev);
+	mlme_legacy_debug("vdev id = %d ", vdev_id);
+
+	if (lim_is_csa_tx_pending(vdev_id))
+		lim_send_csa_tx_complete(vdev_id);
+	else
+		mlme_legacy_debug("CSAIE_TX_COMPLETE_IND already sent");
+
+	return QDF_STATUS_SUCCESS;
+}
+
 /**
  * struct sta_mlme_ops - VDEV MLME operation callbacks strucutre for sta
  * @mlme_vdev_start_send:               callback to initiate actions of VDEV
@@ -1643,6 +1687,7 @@ static struct vdev_mlme_ops ap_mlme_ops = {
 	.mlme_vdev_ext_start_rsp = vdevmgr_vdev_start_rsp_handle,
 	.mlme_vdev_ext_peer_delete_all_rsp =
 				vdevmgr_vdev_peer_delete_all_rsp_handle,
+	.mlme_vdev_csa_complete = ap_mlme_vdev_csa_complete,
 };
 
 static struct vdev_mlme_ops mon_mlme_ops = {

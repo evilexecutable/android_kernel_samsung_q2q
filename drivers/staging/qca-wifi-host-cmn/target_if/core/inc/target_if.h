@@ -51,6 +51,8 @@
 	QDF_TRACE_EXIT(QDF_MODULE_ID_TARGET_IF, "exit")
 #define target_if_err_rl(params...) \
 	QDF_TRACE_ERROR_RL(QDF_MODULE_ID_TARGET_IF, params)
+#define target_if_debug_rl(params...) \
+	QDF_TRACE_DEBUG_RL(QDF_MODULE_ID_TARGET_IF, params)
 
 
 #define targetif_nofl_fatal(params...) \
@@ -240,6 +242,7 @@ struct tgt_info {
  * @smart_log_enable: Enable Smart Logs feature
  * @cfr_support_enable: CFR support enable
  * @set_pktlog_checksum: Set the pktlog checksum from FW ready event to pl_dev
+ * @csa_switch_count_status: CSA event handler
  */
 struct target_ops {
 	QDF_STATUS (*ext_resource_config_enable)
@@ -302,6 +305,9 @@ struct target_ops {
 		 struct target_psoc_info *tgt_info, uint8_t *event);
 	void (*set_pktlog_checksum)
 		(struct wlan_objmgr_pdev *pdev, uint32_t checksum);
+	int (*csa_switch_count_status)(
+		struct wlan_objmgr_psoc *psoc,
+		struct pdev_csa_switch_count_status csa_status);
 };
 
 
@@ -2114,6 +2120,26 @@ static inline void target_if_add_11ax_modes(struct wlan_objmgr_psoc *psoc,
 #endif
 
 /**
+ * target_if_csa_switch_count_status - Calls a function to process CSA event
+ * @psoc:  psoc object
+ * @tgt_hdl: target_psoc_info pointer
+ * @csa_status: CSA switch count status event param
+ *
+ * Return: 0 on success, -1 on failure
+ */
+static inline int target_if_csa_switch_count_status(
+		struct wlan_objmgr_psoc *psoc,
+		struct target_psoc_info *tgt_hdl,
+		struct pdev_csa_switch_count_status csa_status)
+{
+	if (tgt_hdl->tif_ops && tgt_hdl->tif_ops->csa_switch_count_status)
+		return tgt_hdl->tif_ops->csa_switch_count_status(
+				psoc, csa_status);
+
+	return -1;
+}
+
+/**
  * target_if_set_default_config - Set default config in init command
  * @psoc:  psoc object
  * @tgt_hdl: target_psoc_info pointer
@@ -2513,4 +2539,50 @@ static inline void target_psoc_get_mu_max_users(
 	mu_caps->mumimo_ul = service_ext2_param->max_users_ul_mumimo;
 }
 
+/**
+ * target_if_set_reg_cc_ext_supp() - Set reg_cc_ext_supp capability
+ * in WMI_INIT_CMD based on host capability of reg_cc_ext_event.
+ *
+ * @tgt_hdl: Pointer to struct target_psoc_info.
+ * @psoc: Pointer to struct wlan_objmgr_psoc.
+ *
+ */
+void target_if_set_reg_cc_ext_supp(struct target_psoc_info *tgt_hdl,
+				   struct wlan_objmgr_psoc *psoc);
+
+/**
+ * target_psoc_set_twt_ack_cap() - Set twt ack capability
+ *
+ * @psoc_info: Pointer to struct target_psoc_info.
+ * @val: twt ack cap value
+ *
+ * Return: None
+ *
+ */
+static inline
+void target_psoc_set_twt_ack_cap(struct target_psoc_info *psoc_info, bool val)
+{
+	if (!psoc_info)
+		return;
+
+	psoc_info->info.service_ext2_param.twt_ack_support_cap = val;
+}
+
+/**
+ * target_psoc_get_twt_ack_cap() - Get twt ack capability
+ *
+ * @psoc_info: Pointer to struct target_psoc_info.
+ * @val: twt ack cap value
+ *
+ * Return: None
+ *
+ */
+static inline
+void target_psoc_get_twt_ack_cap(struct target_psoc_info *psoc_info, bool *val)
+{
+	if (!psoc_info)
+		return;
+
+	*val = psoc_info->info.service_ext2_param.twt_ack_support_cap;
+}
 #endif
