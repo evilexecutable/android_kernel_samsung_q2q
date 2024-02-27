@@ -569,113 +569,116 @@ struct stm_ts_data {
 	int (*stm_ts_spi_read)(struct stm_ts_data *ts, u8 *reg, int cnum, u8 *data, int len);
 	int (*stm_ts_read_sponge)(struct stm_ts_data *ts, u8 *data, int length);
 	int (*stm_ts_write_sponge)(struct stm_ts_data *ts, u8 *data, int length);
-	int (*stm_ts_systemreset)(struct stm_ts_data *ts, unsigned int msec);
-	int (*stm_ts_wait_for_ready)(struct stm_ts_data *ts);
-	void (*stm_ts_command)(struct stm_ts_data *ts, u8 cmd, bool checkecho);
+	int (*stm_stm_ts_systemreset)(struct stm_ts_data *ts, unsigned int msec);
+	int (*stm_stm_ts_wait_for_ready)(struct stm_ts_data *ts);
+	void (*stm_stm_ts_command)(struct stm_ts_data *ts, u8 cmd, bool checkecho);
 };
 
 //core
-int stm_ts_stop_device(void *data);
-int stm_ts_start_device(void *data);
-irqreturn_t stm_ts_irq_thread(int irq, void *ptr);
+int stm_stm_ts_stop_device(void *data);
+int stm_stm_ts_start_device(void *data);
+irqreturn_t stm_stm_ts_irq_thread(int irq, void *ptr);
 
-void stm_ts_reinit(void *data);
-int stm_ts_execute_autotune(struct stm_ts_data *ts, bool IsSaving);
+void stm_stm_ts_reinit(void *data);
+int stm_stm_ts_execute_autotune(struct stm_ts_data *ts, bool IsSaving);
 int stm_ts_spi_get_tsp_test_result(struct stm_ts_data *ts);
-void stm_ts_release_all_finger(struct stm_ts_data *ts);
-void stm_ts_locked_release_all_finger(struct stm_ts_data *ts);
+void stm_stm_ts_release_all_finger(struct stm_ts_data *ts);
+void stm_stm_ts_locked_release_all_finger(struct stm_ts_data *ts);
 
-int stm_ts_set_external_noise_mode(struct stm_ts_data *ts, u8 mode);
-int stm_ts_fix_active_mode(struct stm_ts_data *ts, bool enable);
-int stm_ts_get_version_info(struct stm_ts_data *ts);
-int stm_ts_wait_for_ready(struct stm_ts_data *ts);
-int stm_ts_input_open(struct input_dev *dev);
-void stm_ts_input_close(struct input_dev *dev);
+int stm_stm_ts_set_external_noise_mode(struct stm_ts_data *ts, u8 mode);
+int stm_stm_ts_fix_active_mode(struct stm_ts_data *ts, bool enable);
+int stm_stm_ts_get_version_info(struct stm_ts_data *ts);
+int stm_stm_ts_wait_for_ready(struct stm_ts_data *ts);
+int stm_stm_ts_input_open(struct input_dev *dev);
+void stm_stm_ts_input_close(struct input_dev *dev);
 
 //fn
-int stm_ts_read_from_sponge(struct stm_ts_data *ts, u8 *data, int length);
-int stm_ts_write_to_sponge(struct stm_ts_data *ts, u8 *data, int length);
-void stm_ts_command(struct stm_ts_data *ts, u8 cmd, bool checkecho);
-void stm_set_grip_data_to_ic(struct device *dev, u8 flag);
-int stm_ts_set_temperature(struct device *dev, u8 temperature_data);
-int stm_ts_fw_corruption_check(struct stm_ts_data *ts);
-int stm_ts_read_chip_id_hw(struct stm_ts_data *ts);
-int stm_ts_read_chip_id(struct stm_ts_data *ts);
-int stm_ts_get_version_info(struct stm_ts_data *ts);
-int stm_ts_systemreset(struct stm_ts_data *ts, unsigned int msec);
-int stm_ts_set_scanmode(struct stm_ts_data *ts, u8 scan_mode);
-int stm_ts_set_hsync_scanmode(struct stm_ts_data *ts, u8 scan_mode);
-int stm_ts_set_lowpowermode(void *data, u8 mode);
-int stm_ts_set_aod_rect(struct stm_ts_data *ts);
-void stm_ts_reset(struct stm_ts_data *ts, unsigned int ms);
-void stm_ts_reset_work(struct work_struct *work);
-void stm_ts_read_info_work(struct work_struct *work);
-void stm_ts_print_info_work(struct work_struct *work);
-int get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvdata);
-int get_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata);
-int stm_ts_set_custom_library(struct stm_ts_data *ts);
-void stm_ts_get_custom_library(struct stm_ts_data *ts);
-void stm_ts_set_fod_finger_merge(struct stm_ts_data *ts);
-int stm_ts_set_fod_rect(struct stm_ts_data *ts);
-int stm_ts_set_touchable_area(struct stm_ts_data *ts);
-int stm_ts_ear_detect_enable(struct stm_ts_data *ts, u8 enable);
-int stm_ts_pocket_mode_enable(struct stm_ts_data *ts, u8 enable);
-int stm_ts_set_charger_mode(struct stm_ts_data *ts);
-void stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable);
-int stm_ts_set_press_property(struct stm_ts_data *ts);
-int stm_ts_get_sysinfo_data(struct stm_ts_data *ts, u8 sysinfo_addr, u8 read_cnt, u8 *data);
-void stm_ts_change_scan_rate(struct stm_ts_data *ts, u8 rate);
-int stm_ts_osc_trim_recovery(struct stm_ts_data *ts);
+int stm_stm_ts_read_from_sponge(struct stm_ts_data *ts, u8 *data, int length);
+int stm_stm_ts_write_to_sponge(struct stm_ts_data *ts, u8 *data, int length);
+void stm_stm_ts_command(struct stm_ts_data *ts, u8 cmd, bool checkecho);
+void stm_stm_set_grip_data_to_ic(struct device *dev, u8 flag);
+int stm_stm_ts_set_temperature(struct device *dev, u8 temperature_data);
+int stm_stm_ts_fw_corruption_check(struct stm_ts_data *ts);
+int stm_stm_ts_read_chip_id_hw(struct stm_ts_data *ts);
+int stm_stm_ts_read_chip_id(struct stm_ts_data *ts);
+int stm_stm_ts_get_version_info(struct stm_ts_data *ts);
+int stm_stm_ts_systemreset(struct stm_ts_data *ts, unsigned int msec);
+int stm_stm_ts_set_scanmode(struct stm_ts_data *ts, u8 scan_mode);
+int stm_stm_ts_set_hsync_scanmode(struct stm_ts_data *ts, u8 scan_mode);
+int stm_stm_ts_set_lowpowermode(void *data, u8 mode);
+int stm_stm_ts_set_aod_rect(struct stm_ts_data *ts);
+void stm_stm_ts_reset(struct stm_ts_data *ts, unsigned int ms);
+void stm_stm_ts_reset_work(struct work_struct *work);
+void stm_stm_ts_read_info_work(struct work_struct *work);
+void stm_stm_ts_print_info_work(struct work_struct *work);
+int stm_get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvdata);
+int get_stm_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata);
+int stm_stm_ts_set_custom_library(struct stm_ts_data *ts);
+void stm_stm_ts_get_custom_library(struct stm_ts_data *ts);
+void stm_stm_ts_set_fod_finger_merge(struct stm_ts_data *ts);
+int stm_stm_ts_set_fod_rect(struct stm_ts_data *ts);
+int stm_stm_ts_set_touchable_area(struct stm_ts_data *ts);
+int stm_stm_ts_ear_detect_enable(struct stm_ts_data *ts, u8 enable);
+int stm_stm_ts_pocket_mode_enable(struct stm_ts_data *ts, u8 enable);
+int stm_stm_ts_set_charger_mode(struct stm_ts_data *ts);
+void stm_stm_ts_spi_set_cover_type(struct stm_ts_data *ts, bool enable);
+int stm_stm_ts_set_press_property(struct stm_ts_data *ts);
+int stm_stm_ts_get_sysinfo_data(struct stm_ts_data *ts, u8 sysinfo_addr, u8 read_cnt, u8 *data);
+void stm_stm_ts_change_scan_rate(struct stm_ts_data *ts, u8 rate);
+int stm_stm_ts_osc_trim_recovery(struct stm_ts_data *ts);
 int get_nvm_data(struct stm_ts_data *ts, int type, u8 *nvdata);
 int set_nvm_data(struct stm_ts_data *ts, u8 type, u8 *buf);
 int get_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *nvdata);
-int set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf);
-int stm_ts_get_channel_info(struct stm_ts_data *ts);
-int stm_ts_set_opmode(struct stm_ts_data *ts, u8 mode);
-int stm_ts_set_touch_function(struct stm_ts_data *ts);
-void stm_ts_get_touch_function(struct work_struct *work);
-int stm_ts_sip_mode_enable(struct stm_ts_data *ts);
-int stm_ts_game_mode_enable(struct stm_ts_data *ts);
-int stm_ts_note_mode_enable(struct stm_ts_data *ts);
+int stm_set_stm_nvm_data(struct stm_ts_data *ts, u8 type, u8 *buf);
+int stm_stm_set_nvm_data_by_size(struct stm_ts_data *ts, u8 offset, int length, u8 *buf);
+int stm_stm_ts_get_channel_info(struct stm_ts_data *ts);
+int stm_stm_ts_set_opmode(struct stm_ts_data *ts, u8 mode);
+int stm_stm_ts_set_touch_function(struct stm_ts_data *ts);
+void stm_stm_ts_get_touch_function(struct work_struct *work);
+int stm_stm_ts_sip_mode_enable(struct stm_ts_data *ts);
+int stm_stm_ts_game_mode_enable(struct stm_ts_data *ts);
+int stm_stm_ts_note_mode_enable(struct stm_ts_data *ts);
 
 //cmd
-void stm_ts_fn_remove(struct stm_ts_data *ts);
-int stm_ts_fn_init(struct stm_ts_data *ts);
-int stm_ts_panel_ito_test(struct stm_ts_data *ts, int testmode);
-void stm_ts_run_rawdata_all(struct stm_ts_data *ts);
+void stm_stm_ts_fn_remove(struct stm_ts_data *ts);
+int stm_stm_ts_fn_init(struct stm_ts_data *ts);
+int stm_stm_ts_panel_ito_test(struct stm_ts_data *ts, int testmode);
+void stm_stm_ts_run_rawdata_all(struct stm_ts_data *ts);
 
 //dump
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_DUMP_MODE)
-void stm_ts_check_rawdata(struct work_struct *work);
-void stm_ts_dump_tsp_log(struct device *dev);
+void stm_stm_ts_check_rawdata(struct work_struct *work);
+void stm_stm_ts_dump_tsp_log(struct device *dev);
 void stm_ts_spi_sponge_dump_flush(struct stm_ts_data *ts, int dump_area);
 #endif
-void stm_ts_init_proc(struct stm_ts_data *ts);
-ssize_t get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position);
-ssize_t get_lp_dump(struct device *dev, struct device_attribute *attr, char *buf);
+void stm_stm_ts_init_proc(struct stm_ts_data *ts);
+ssize_t stm_get_cmoffset_dump(struct stm_ts_data *ts, char *buf, u8 position);
+ssize_t stm_get_lp_dump(struct device *dev, struct device_attribute *attr, char *buf);
 
 //fw
 int stm_ts_spi_fw_update_on_probe(struct stm_ts_data *ts);
 int stm_ts_spi_fw_update_on_hidden_menu(struct stm_ts_data *ts, int update_type);
-int stm_ts_wait_for_echo_event(struct stm_ts_data *ts, u8 *cmd, u8 cmd_cnt, int delay);
+int stm_stm_ts_wait_for_echo_event(struct stm_ts_data *ts, u8 *cmd, u8 cmd_cnt, int delay);
 int stm_ts_fw_wait_for_event(struct stm_ts_data *ts, u8 *result, u8 result_cnt);
 int stm_tclm_data_read(struct spi_device *client, int address);
 int stm_tclm_data_write(struct spi_device *client, int address);
-int stm_ts_tclm_execute_force_calibration(struct spi_device *client, int cal_mode);
-void stm_ts_checking_miscal(struct stm_ts_data *ts);
+int stm_stm_ts_tclm_execute_force_calibration(struct spi_device *client, int cal_mode);
+void stm_stm_ts_checking_miscal(struct stm_ts_data *ts);
+
+void stm_stm_switching_work(struct work_struct *work);
 
 #if IS_ENABLED(CONFIG_INPUT_SEC_NOTIFIER)
-int stm_notifier_call(struct notifier_block *n, unsigned long data, void *v);
+int stm_stm_notifier_call(struct notifier_block *n, unsigned long data, void *v);
 #endif
 
 #if IS_ENABLED(CONFIG_TOUCHSCREEN_DUAL_FOLDABLE)
 void stm_switching_work(struct work_struct *work);
 
 #if IS_ENABLED(CONFIG_HALL_NOTIFIER)
-int stm_hall_ic_notify(struct notifier_block *nb, unsigned long flip_cover, void *v);
+int stm_stm_hall_ic_notify(struct notifier_block *nb, unsigned long flip_cover, void *v);
 #endif
 #if IS_ENABLED(CONFIG_SUPPORT_SENSOR_FOLD)
-int stm_hall_ic_ssh_notify(struct notifier_block *nb, unsigned long flip_cover, void *v);
+int stm_stm_hall_ic_ssh_notify(struct notifier_block *nb, unsigned long flip_cover, void *v);
 #endif
 #endif
 
@@ -691,7 +694,7 @@ struct stm_ts_callbacks {
 #endif
 
 #if IS_ENABLED(CONFIG_INPUT_SEC_SECURE_TOUCH)
-void secure_touch_stop(struct stm_ts_data *ts, bool stop);
+void stm_secure_touch_stop(struct stm_ts_data *ts, bool stop);
 #endif
 #if !IS_ENABLED(CONFIG_SAMSUNG_PRODUCT_SHIP)
 int stm_ts_spi_tool_proc_init(struct stm_ts_data *ts);
